@@ -1,9 +1,29 @@
-var docs = app.documents,
-    alertText = ''.concat('Current open documents', "\n");
-    
-for (var i = 0; i < docs.length; i++)
+var savePath = '~/PS Dev/Action Target';
+
+function main()
 {
-    alertText = ''.concat(alertText, docs[i].name, "\n");
+    var docs = app.documents,
+        alertText = ''.concat('Current open documents', "\n"),
+        doc;
+        
+    for (var i = 0; i < docs.length; i++)
+    {
+        doc = docs[i];
+        app.activeDocument = doc;
+        alertText = ''.concat(alertText, doc.name, "\n");
+        saveJpeg(doc);
+    }
+    
+    alert(alertText);    
 }
 
-alert(alertText);
+function saveJpeg(doc)
+{
+    var saveName = doc.name.split('.')[0],
+        file = new File(savePath + '/' + saveName + '.jpg'),
+        opts = new JPEGSaveOptions();
+        
+    opts.quality = 10;
+    doc.saveAs(file, opts, true, Extension.LOWERCASE);
+}
+main();
