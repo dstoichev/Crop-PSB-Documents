@@ -1,17 +1,22 @@
+#include "./include/json2.js"
+
 var savePath = '~/PS Dev/Action Target';
 
 function main()
 {
     var docs = app.documents,
         alertText = ''.concat('Current open documents', "\n"),
+        test = {"a": "alabala", "bool": true},
         doc;
+        
+    alertText += JSON.stringify(test) + "\n";
         
     for (var i = 0; i < docs.length; i++)
     {
         doc = docs[i];
         app.activeDocument = doc;
         alertText = ''.concat(alertText, doc.name, "\n");
-        saveJpeg(doc);
+        //saveJpeg(doc);
     }
     
     alert(alertText);    
