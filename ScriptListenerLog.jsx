@@ -67,3 +67,91 @@ executeAction( idInvs, undefined, DialogModes.NO );
 var idCpyM = charIDToTypeID( "CpyM" );
 executeAction( idCpyM, undefined, DialogModes.NO );
 
+/////////////////////////////////////////////////////////////////////
+
+// =======================================================
+var idOpn = charIDToTypeID( "Opn " );
+    var desc1 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+    desc1.putPath( idnull, new File( "/Users/administrator/PS Dev/Action Sources/R_D_Test_01.psb" ) );
+executeAction( idOpn, desc1, DialogModes.NO );
+
+// =======================================================
+var idAdd = charIDToTypeID( "Add " );
+    var desc2 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref1 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idMsk = charIDToTypeID( "Msk " );
+        ref1.putEnumerated( idChnl, idChnl, idMsk );
+    desc2.putReference( idnull, ref1 );
+    var idT = charIDToTypeID( "T   " );
+        var ref2 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idfsel = charIDToTypeID( "fsel" );
+        ref2.putProperty( idChnl, idfsel );
+    desc2.putReference( idT, ref2 );
+    var idVrsn = charIDToTypeID( "Vrsn" );
+    desc2.putInteger( idVrsn, 1 );
+    var idmaskParameters = stringIDToTypeID( "maskParameters" );
+    desc2.putBoolean( idmaskParameters, true );
+executeAction( idAdd, desc2, DialogModes.NO );
+
+// =======================================================
+var idInvs = charIDToTypeID( "Invs" );
+executeAction( idInvs, undefined, DialogModes.NO );
+
+// =======================================================
+var idCpyM = charIDToTypeID( "CpyM" );
+executeAction( idCpyM, undefined, DialogModes.NO );
+
+//--------------------------------------------------------
+
+Layer2Selection = function()
+{
+   if( app.activeDocument.activeLayer.isBackgroundLayer ) return
+
+   var desc   = new ActionDescriptor()
+   var ref      = new ActionReference()
+   ref.putProperty( charIDToTypeID( "Chnl" ), charIDToTypeID( "fsel" ) )
+   desc.putReference( charIDToTypeID( "null" ), ref )
+   var ref1   = new ActionReference()
+   ref1.putEnumerated( charIDToTypeID( "Chnl" ), charIDToTypeID( "Chnl" ), charIDToTypeID( "Trsp" ) )
+   desc.putReference( charIDToTypeID( "T   " ), ref1 )
+   executeAction( charIDToTypeID( "setd" ), desc, DialogModes.NO )
+}
+
+AddLayer2Selection = function()
+{
+   if( app.activeDocument.activeLayer.isBackgroundLayer ) return
+
+   var desc   = new ActionDescriptor()
+   var ref      = new ActionReference()
+   ref.putEnumerated( charIDToTypeID( "Chnl" ), charIDToTypeID( "Chnl" ) , charIDToTypeID( "Trsp" ) )
+   desc.putReference( charIDToTypeID( "null" ), ref )
+   var ref1   = new ActionReference()
+   ref1.putProperty( charIDToTypeID( "Chnl" ), charIDToTypeID( "fsel" ) )
+   desc.putReference( charIDToTypeID( "T   " ), ref1 )
+   executeAction( charIDToTypeID( "Add " ), desc, DialogModes.NO )
+}
+
+var doc          = activeDocument
+var layersToClip   = doc.artLayers.length - 1      // don't count the background
+doc.crop([0, 0, doc.width, doc.height])            // clear everything that is outside of the document's boundaries
+
+doc.activeLayer      = doc.artLayers[0]            // start with top layer
+Layer2Selection()                                 // and make the first selection 
+
+for( i = 1; i < layersToClip; i++)               // don't cound the top layer
+{
+   doc.activeLayer = doc.artLayers[i]            // switch to next layer
+   activeDocument.quickMaskMode = true            // set the QuickMask mode
+   activeDocument.activeLayer.threshold(128)      // apply a mid grey threshold
+   activeDocument.quickMaskMode = false            // and get out of the QM mode
+   doc.selection.clear()                           // clear the layer of unwanted pixels
+   AddLayer2Selection()                           // add remaining pixels to the selection
+}
+
+doc.selection.deselect()                           // and clear the traces
+doc.activeLayer = doc.artLayers[0]               // and select the top layer
