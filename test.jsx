@@ -1,0 +1,51 @@
+#target photoshop
+#include "./include/json2.js"
+
+var idOpn = charIDToTypeID( "Opn " );
+    var desc1 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+    desc1.putPath( idnull, new File( "/Users/administrator/PS Dev/Action Sources/R_D_Test_01.psb" ) );
+executeAction( idOpn, desc1, DialogModes.NO );
+
+// =======================================================
+var idAdd = charIDToTypeID( "Add " );
+    var desc2 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref1 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idMsk = charIDToTypeID( "Msk " );
+        ref1.putEnumerated( idChnl, idChnl, idMsk );
+    desc2.putReference( idnull, ref1 );
+    var idT = charIDToTypeID( "T   " );
+        var ref2 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idfsel = charIDToTypeID( "fsel" );
+        ref2.putProperty( idChnl, idfsel );
+    desc2.putReference( idT, ref2 );
+    var idVrsn = charIDToTypeID( "Vrsn" );
+    desc2.putInteger( idVrsn, 1 );
+    var idmaskParameters = stringIDToTypeID( "maskParameters" );
+    desc2.putBoolean( idmaskParameters, true );
+executeAction( idAdd, desc2, DialogModes.NO );
+
+// =======================================================
+var idInvs = charIDToTypeID( "Invs" );
+executeAction( idInvs, undefined, DialogModes.NO );
+
+// =======================================================
+var idCpyM = charIDToTypeID( "CpyM" );
+executeAction( idCpyM, undefined, DialogModes.NO );
+
+var alertText = ''.concat('Current open documents', "\n"),
+    doc = app.activeDocument,
+    corner;
+    
+for (var j = 0; j < 4; j++)
+{
+    corner = doc.selection.bounds[j];
+    alertText = ''.concat(alertText, corner[0], ' ', corner[1],  "\n");
+}
+alertText = ''.concat(alertText, doc.name, "\n\n");
+
+alert(alertText);
