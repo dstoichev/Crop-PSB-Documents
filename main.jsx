@@ -27,14 +27,31 @@ function main()
         
         selectJustTheCrop();
         
+        var bounds = getSelectionBounds(doc);
+        
         doc.selection.copy(true);
   
-        alertText = ''.concat(alertText, doc.selection.typename,  "\n");
+        alertText = ''.concat(alertText, JSON.stringify(bounds),  "\n");
         alertText = ''.concat(alertText, doc.name, "\n\n");
         saveJpeg(doc);
     }
     
     alert(alertText);    
+}
+
+//
+// Function: getSelectionBounds
+// Description: Get the bounds of the current selection
+// Input:  doc  - a Document
+// Return: a bound rectangle (in pixels)
+//
+function getSelectionBounds(doc) {
+  var bnds = [];
+  var sbnds = doc.selection.bounds;
+  for (var i = 0; i < sbnds.length; i++) {
+    bnds[i] = sbnds[i].as("px");
+  }
+  return bnds;
 }
 
 function selectJustTheCrop()
