@@ -3,25 +3,11 @@
 var savePath = '~/PS Dev/Action Target',
     cropLayerName = 'CROP';
 
-Layer2Selection = function()
-{
-   if( app.activeDocument.activeLayer.isBackgroundLayer ) return
-
-   var desc   = new ActionDescriptor()
-   var ref      = new ActionReference()
-   ref.putProperty( charIDToTypeID( "Chnl" ), charIDToTypeID( "fsel" ) )
-   desc.putReference( charIDToTypeID( "null" ), ref )
-   var ref1   = new ActionReference()
-   ref1.putEnumerated( charIDToTypeID( "Chnl" ), charIDToTypeID( "Chnl" ), charIDToTypeID( "Trsp" ) )
-   desc.putReference( charIDToTypeID( "T   " ), ref1 )
-   executeAction( charIDToTypeID( "setd" ), desc, DialogModes.NO )
-}
-
 function main()
 {
     var docs = app.documents,
         alertText = ''.concat('Current open documents', "\n"),
-        doc, cropLayerReference, corner;
+        doc, cropLayerReference;
         
     for (var i = 0; i < docs.length; i++)
     {
@@ -29,20 +15,15 @@ function main()
         app.activeDocument = doc;
         cropLayerReference = doc.artLayers.getByName(cropLayerName);
         doc.activeLayer = cropLayerReference;
+        doc.selection.clear();
+        doc.selection.selectAll();
         
-        Layer2Selection();        
-        //doc.selection.invert();
+        selectJustTheCrop();
+        
         /*
-        doc.selection.select(cropLayerReference.bounds, Selection.EXTEND);
-        doc.selection.invert();
         doc.selection.copy(true);
-        
-        for (var j = 0; j < 4; j++)
-        {
-            corner = doc.selection.bounds[j];
-            alertText = ''.concat(alertText, corner[0], ' ', corner[1],  "\n");
-        }
         */
+        
         alertText = ''.concat(alertText, doc.selection.typename,  "\n");
         alertText = ''.concat(alertText, doc.name, "\n\n");
         //saveJpeg(doc);
@@ -51,44 +32,43 @@ function main()
     alert(alertText);    
 }
 
-function addLayer2Selection()
+function selectJustTheCrop()
 {
-   var desc   = new ActionDescriptor()
-   var ref      = new ActionReference()
-   ref.putEnumerated( charIDToTypeID( "Chnl" ), charIDToTypeID( "Chnl" ) , charIDToTypeID( "Trsp" ) )
-   desc.putReference( charIDToTypeID( "null" ), ref )
-   var ref1   = new ActionReference()
-   ref1.putProperty( charIDToTypeID( "Chnl" ), charIDToTypeID( "fsel" ) )
-   desc.putReference( charIDToTypeID( "T   " ), ref1 )
-   executeAction( charIDToTypeID( "Add " ), desc, DialogModes.NO )
-}
+    // =======================================================
+var idslct = charIDToTypeID( "slct" );
+    var desc8 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref5 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idMsk = charIDToTypeID( "Msk " );
+        ref5.putEnumerated( idChnl, idChnl, idMsk );
+    desc8.putReference( idnull, ref5 );
+    var idMkVs = charIDToTypeID( "MkVs" );
+    desc8.putBoolean( idMkVs, false );
+executeAction( idslct, desc8, DialogModes.NO );
 
-function addMaskToSelection()
-{
-    var idAdd = charIDToTypeID( "Add " ),
-        desc3 = new ActionDescriptor(),
-        idnull = charIDToTypeID( "null" ),
-        ref2 = new ActionReference(),
-        idChnl = charIDToTypeID( "Chnl" ),
-        idMsk = charIDToTypeID( "Msk " );
-    
-    ref2.putEnumerated( idChnl, idChnl, idMsk );
-    desc3.putReference( idnull, ref2 );
-    
-    var idT = charIDToTypeID( "T   " ),
-        ref3 = new ActionReference(),
-        idfsel = charIDToTypeID( "fsel" );
-    
-    ref3.putProperty( idChnl, idfsel );
-    desc3.putReference( idT, ref3 );
-    
+// =======================================================
+var idSbtr = charIDToTypeID( "Sbtr" );
+    var desc9 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref6 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idOrdn = charIDToTypeID( "Ordn" );
+        var idTrgt = charIDToTypeID( "Trgt" );
+        ref6.putEnumerated( idChnl, idOrdn, idTrgt );
+    desc9.putReference( idnull, ref6 );
+    var idFrom = charIDToTypeID( "From" );
+        var ref7 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idfsel = charIDToTypeID( "fsel" );
+        ref7.putProperty( idChnl, idfsel );
+    desc9.putReference( idFrom, ref7 );
     var idVrsn = charIDToTypeID( "Vrsn" );
-    desc3.putInteger( idVrsn, 1 );
-    
+    desc9.putInteger( idVrsn, 1 );
     var idmaskParameters = stringIDToTypeID( "maskParameters" );
-    desc3.putBoolean( idmaskParameters, true );
-    
-    executeAction( idAdd, desc3, DialogModes.NO );
+    desc9.putBoolean( idmaskParameters, true );
+executeAction( idSbtr, desc9, DialogModes.NO );
 }
 
 function saveJpeg(doc)
@@ -100,4 +80,5 @@ function saveJpeg(doc)
     opts.quality = 10;
     doc.saveAs(file, opts, true, Extension.LOWERCASE);
 }
+
 main();

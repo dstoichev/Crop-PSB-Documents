@@ -1,4 +1,53 @@
 // =======================================================
+var idslct = charIDToTypeID( "slct" );
+    var desc7 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref5 = new ActionReference();
+        var idLyr = charIDToTypeID( "Lyr " );
+        ref5.putName( idLyr, "CROP" );
+    desc7.putReference( idnull, ref5 );
+    var idMkVs = charIDToTypeID( "MkVs" );
+    desc7.putBoolean( idMkVs, false );
+executeAction( idslct, desc7, DialogModes.NO );
+
+// =======================================================
+var idslct = charIDToTypeID( "slct" );
+    var desc8 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref6 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idMsk = charIDToTypeID( "Msk " );
+        ref6.putEnumerated( idChnl, idChnl, idMsk );
+    desc8.putReference( idnull, ref6 );
+    var idMkVs = charIDToTypeID( "MkVs" );
+    desc8.putBoolean( idMkVs, false );
+executeAction( idslct, desc8, DialogModes.NO );
+
+// =======================================================
+var idAdd = charIDToTypeID( "Add " );
+    var desc9 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref7 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idOrdn = charIDToTypeID( "Ordn" );
+        var idTrgt = charIDToTypeID( "Trgt" );
+        ref7.putEnumerated( idChnl, idOrdn, idTrgt );
+    desc9.putReference( idnull, ref7 );
+    var idT = charIDToTypeID( "T   " );
+        var ref8 = new ActionReference();
+        var idChnl = charIDToTypeID( "Chnl" );
+        var idfsel = charIDToTypeID( "fsel" );
+        ref8.putProperty( idChnl, idfsel );
+    desc9.putReference( idT, ref8 );
+    var idVrsn = charIDToTypeID( "Vrsn" );
+    desc9.putInteger( idVrsn, 1 );
+    var idmaskParameters = stringIDToTypeID( "maskParameters" );
+    desc9.putBoolean( idmaskParameters, true );
+executeAction( idAdd, desc9, DialogModes.NO );
+
+//-------------------=====================
+// =======================================================
 var idOpn = charIDToTypeID( "Opn " );
     var desc1 = new ActionDescriptor();
     var idnull = charIDToTypeID( "null" );
