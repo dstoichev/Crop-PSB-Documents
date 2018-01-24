@@ -27,13 +27,26 @@ function main()
         
         selectJustTheCrop();
         
-        var bounds = getSelectionBounds(doc);
+        var bounds = getSelectionBounds(doc),
+            topLeftX = bounds[0],
+            topLeftY = bounds[1],
+            bottomRightX = bounds[2],
+            bottomRightY = bounds[3],
+            selectionWidth = bottomRightX - topLeftX,
+            selectionHeight = bottomRightY - topLeftY,
+            region = Array(Array( topLeftX, topLeftY ),
+                           Array( topLeftX + selectionWidth, topLeftY ),
+                           Array( topLeftX + selectionWidth, topLeftY +selectionHeight ),
+                           Array( bottomRightX, bottomRightY ),
+                           Array( topLeftX, topLeftY ));
+        
+        doc.selection.select(region, SelectionType.REPLACE);
         
         doc.selection.copy(true);
   
         alertText = ''.concat(alertText, JSON.stringify(bounds),  "\n");
         alertText = ''.concat(alertText, doc.name, "\n\n");
-        saveJpeg(doc);
+        saveJpeg(doc, selectionWidth, selectionHeight);
     }
     
     alert(alertText);    
@@ -125,17 +138,19 @@ executeAction( idSbtr, desc9, DialogModes.NO );
 
 }
 
-function saveJpeg(doc)
+function saveJpeg(doc, tempDocWidthAsNumber, tempDocHeightAsNumber)
 {
     var currentActive = app.activeDocument,
         saveName = doc.name.split('.')[0],
         tempDocumentName = 'Temp-' + saveName,
         file = new File(savePath + '/' + saveName + '.jpg'),
-        opts = new JPEGSaveOptions();
+        opts = new JPEGSaveOptions(),
+        tempDocWidth = new UnitValue(tempDocWidthAsNumber, 'px'),
+        tempDocHeight = new UnitValue(tempDocHeightAsNumber, 'px');
         
     opts.quality = 10;
     
-    app.documents.add(null, null, 72, tempDocumentName, NewDocumentMode.RGB);
+    app.documents.add(tempDocWidth, tempDocHeight, 72, tempDocumentName, NewDocumentMode.RGB);
     currentActive = app.documents.getByName(tempDocumentName);
     currentActive.paste();    
     currentActive.flatten();
