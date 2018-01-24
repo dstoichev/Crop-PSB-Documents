@@ -13,20 +13,25 @@ function main()
     {
         doc = docs[i];
         app.activeDocument = doc;
+        
+        doc.selection.selectAll();        
+        
         cropLayerReference = doc.artLayers.getByName(cropLayerName);
         doc.activeLayer = cropLayerReference;
-        doc.selection.clear();
-        doc.selection.selectAll();
-        
+        try {
+            doc.selection.clear();
+        } catch (e) {
+         
+        }
+                
         selectJustTheCrop();
         
-        /*
+        doc.selection.invert();
         doc.selection.copy(true);
-        */
         
         alertText = ''.concat(alertText, doc.selection.typename,  "\n");
         alertText = ''.concat(alertText, doc.name, "\n\n");
-        //saveJpeg(doc);
+        saveJpeg(doc);
     }
     
     alert(alertText);    
@@ -36,49 +41,70 @@ function selectJustTheCrop()
 {
     // =======================================================
 var idslct = charIDToTypeID( "slct" );
-    var desc8 = new ActionDescriptor();
+    var desc5 = new ActionDescriptor();
     var idnull = charIDToTypeID( "null" );
-        var ref5 = new ActionReference();
+        var ref2 = new ActionReference();
+        var idLyr = charIDToTypeID( "Lyr " );
+        ref2.putName( idLyr, "CROP" );
+    desc5.putReference( idnull, ref2 );
+    var idMkVs = charIDToTypeID( "MkVs" );
+    desc5.putBoolean( idMkVs, false );
+executeAction( idslct, desc5, DialogModes.NO );
+
+// =======================================================
+var idslct = charIDToTypeID( "slct" );
+    var desc6 = new ActionDescriptor();
+    var idnull = charIDToTypeID( "null" );
+        var ref3 = new ActionReference();
         var idChnl = charIDToTypeID( "Chnl" );
         var idChnl = charIDToTypeID( "Chnl" );
         var idMsk = charIDToTypeID( "Msk " );
-        ref5.putEnumerated( idChnl, idChnl, idMsk );
-    desc8.putReference( idnull, ref5 );
+        ref3.putEnumerated( idChnl, idChnl, idMsk );
+    desc6.putReference( idnull, ref3 );
     var idMkVs = charIDToTypeID( "MkVs" );
-    desc8.putBoolean( idMkVs, false );
-executeAction( idslct, desc8, DialogModes.NO );
+    desc6.putBoolean( idMkVs, false );
+executeAction( idslct, desc6, DialogModes.NO );
 
 // =======================================================
-var idSbtr = charIDToTypeID( "Sbtr" );
-    var desc9 = new ActionDescriptor();
+var idIntr = charIDToTypeID( "Intr" );
+    var desc7 = new ActionDescriptor();
     var idnull = charIDToTypeID( "null" );
-        var ref6 = new ActionReference();
+        var ref4 = new ActionReference();
         var idChnl = charIDToTypeID( "Chnl" );
         var idOrdn = charIDToTypeID( "Ordn" );
         var idTrgt = charIDToTypeID( "Trgt" );
-        ref6.putEnumerated( idChnl, idOrdn, idTrgt );
-    desc9.putReference( idnull, ref6 );
-    var idFrom = charIDToTypeID( "From" );
-        var ref7 = new ActionReference();
+        ref4.putEnumerated( idChnl, idOrdn, idTrgt );
+    desc7.putReference( idnull, ref4 );
+    var idWith = charIDToTypeID( "With" );
+        var ref5 = new ActionReference();
         var idChnl = charIDToTypeID( "Chnl" );
         var idfsel = charIDToTypeID( "fsel" );
-        ref7.putProperty( idChnl, idfsel );
-    desc9.putReference( idFrom, ref7 );
+        ref5.putProperty( idChnl, idfsel );
+    desc7.putReference( idWith, ref5 );
     var idVrsn = charIDToTypeID( "Vrsn" );
-    desc9.putInteger( idVrsn, 1 );
+    desc7.putInteger( idVrsn, 1 );
     var idmaskParameters = stringIDToTypeID( "maskParameters" );
-    desc9.putBoolean( idmaskParameters, true );
-executeAction( idSbtr, desc9, DialogModes.NO );
+    desc7.putBoolean( idmaskParameters, true );
+executeAction( idIntr, desc7, DialogModes.NO );
+
 }
 
 function saveJpeg(doc)
 {
-    var saveName = doc.name.split('.')[0],
+    var currentActive = app.activeDocument,
+        saveName = doc.name.split('.')[0],
+        tempDocumentName = 'Temp-' + saveName,
         file = new File(savePath + '/' + saveName + '.jpg'),
         opts = new JPEGSaveOptions();
         
     opts.quality = 10;
-    doc.saveAs(file, opts, true, Extension.LOWERCASE);
+    
+    app.documents.add(null, null, 72, tempDocumentName, NewDocumentMode.RGB);
+    currentActive = app.documents.getByName(tempDocumentName);
+    currentActive.paste();
+    currentActive.flatten();
+    currentActive.saveAs(file, opts, true, Extension.LOWERCASE);
+    currentActive.close(SaveOptions.DONOTSAVECHANGES)
 }
 
 main();
