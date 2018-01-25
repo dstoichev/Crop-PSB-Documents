@@ -68,72 +68,70 @@ function getSelectionBounds(doc) {
 
 function selectJustTheCrop()
 {
-   // =======================================================
-var idslct = charIDToTypeID( "slct" );
-    var desc6 = new ActionDescriptor();
-    var idnull = charIDToTypeID( "null" );
-        var ref3 = new ActionReference();
-        var idLyr = charIDToTypeID( "Lyr " );
-        ref3.putName( idLyr, cropLayerName );
-    desc6.putReference( idnull, ref3 );
-    var idMkVs = charIDToTypeID( "MkVs" );
-    desc6.putBoolean( idMkVs, false );
-executeAction( idslct, desc6, DialogModes.NO );
+    var idnull = charIDToTypeID( "null" ),
+        idOrdn = charIDToTypeID( "Ordn" ),
+        idChnl = charIDToTypeID( "Chnl" ),
+        idfsel = charIDToTypeID( "fsel" ),
+        idMkVs = charIDToTypeID( "MkVs" );
+    
+    // Make the layer active    
+    var desc1 = new ActionDescriptor(),
+        ref1 = new ActionReference(),
+        idslct = charIDToTypeID( "slct" ),
+        idLyr = charIDToTypeID( "Lyr " );
+        
+        
+    ref1.putName( idLyr, cropLayerName );
+    desc1.putReference( idnull, ref1 );
+    desc1.putBoolean( idMkVs, false );
+    executeAction( idslct, desc1, DialogModes.NO );
 
-// =======================================================
-var idsetd = charIDToTypeID( "setd" );
-    var desc7 = new ActionDescriptor();
-    var idnull = charIDToTypeID( "null" );
-        var ref4 = new ActionReference();
-        var idChnl = charIDToTypeID( "Chnl" );
-        var idfsel = charIDToTypeID( "fsel" );
-        ref4.putProperty( idChnl, idfsel );
-    desc7.putReference( idnull, ref4 );
-    var idT = charIDToTypeID( "T   " );
-    var idOrdn = charIDToTypeID( "Ordn" );
-    var idAl = charIDToTypeID( "Al  " );
-    desc7.putEnumerated( idT, idOrdn, idAl );
-executeAction( idsetd, desc7, DialogModes.NO );
+    // Select the entire layer    
+    var desc2 = new ActionDescriptor(),
+        ref2 = new ActionReference(),
+        idsetd = charIDToTypeID( "setd" ),
+        idT = charIDToTypeID( "T   " ),
+        idAl = charIDToTypeID( "Al  " );
+        
+    ref2.putProperty( idChnl, idfsel );
+    desc2.putReference( idnull, ref2 );    
+    desc2.putEnumerated( idT, idOrdn, idAl );
+    executeAction( idsetd, desc2, DialogModes.NO );
 
-// =======================================================
-var idslct = charIDToTypeID( "slct" );
-    var desc8 = new ActionDescriptor();
-    var idnull = charIDToTypeID( "null" );
-        var ref5 = new ActionReference();
-        var idChnl = charIDToTypeID( "Chnl" );
-        var idChnl = charIDToTypeID( "Chnl" );
-        var idMsk = charIDToTypeID( "Msk " );
-        ref5.putEnumerated( idChnl, idChnl, idMsk );
-    desc8.putReference( idnull, ref5 );
-    var idMkVs = charIDToTypeID( "MkVs" );
-    desc8.putBoolean( idMkVs, false );
-executeAction( idslct, desc8, DialogModes.NO );
+    // Make the mask active
+    var desc3 = new ActionDescriptor(),
+        ref3 = new ActionReference(),
+        idslct = charIDToTypeID( "slct" ),
+        idMsk = charIDToTypeID( "Msk " );
+    
+    ref3.putEnumerated( idChnl, idChnl, idMsk );
+    desc3.putReference( idnull, ref3 );    
+    desc3.putBoolean( idMkVs, false );
+    executeAction( idslct, desc3, DialogModes.NO );
 
-// =======================================================
-var idSbtr = charIDToTypeID( "Sbtr" );
-    var desc9 = new ActionDescriptor();
-    var idnull = charIDToTypeID( "null" );
-        var ref6 = new ActionReference();
-        var idChnl = charIDToTypeID( "Chnl" );
-        var idOrdn = charIDToTypeID( "Ordn" );
-        var idTrgt = charIDToTypeID( "Trgt" );
-        ref6.putEnumerated( idChnl, idOrdn, idTrgt );
-    desc9.putReference( idnull, ref6 );
-    var idFrom = charIDToTypeID( "From" );
-        var ref7 = new ActionReference();
-        var idChnl = charIDToTypeID( "Chnl" );
-        var idfsel = charIDToTypeID( "fsel" );
-        ref7.putProperty( idChnl, idfsel );
-    desc9.putReference( idFrom, ref7 );
-    var idVrsn = charIDToTypeID( "Vrsn" );
-    desc9.putInteger( idVrsn, 1 );
-    var idmaskParameters = stringIDToTypeID( "maskParameters" );
-    desc9.putBoolean( idmaskParameters, true );
-executeAction( idSbtr, desc9, DialogModes.NO );
+    // Substract the mask from the selection
+    var desc4 = new ActionDescriptor(),
+        ref4 = new ActionReference(),
+        ref5 = new ActionReference(),
+        idSbtr = charIDToTypeID( "Sbtr" ),
+        idTrgt = charIDToTypeID( "Trgt" ),
+        idFrom = charIDToTypeID( "From" ),
+        idmaskParameters = stringIDToTypeID( "maskParameters" );
+    
+    ref4.putEnumerated( idChnl, idOrdn, idTrgt );
+    desc4.putReference( idnull, ref4 );
+            
+    ref5.putProperty( idChnl, idfsel );
+    desc4.putReference( idFrom, ref5 );
+    
+    desc4.putInteger( idVrsn, 1 );
+    
+    desc4.putBoolean( idmaskParameters, true );
+    executeAction( idSbtr, desc4, DialogModes.NO );
 
-// =======================================================
-//var idCpyM = charIDToTypeID( "CpyM" );
-//executeAction( idCpyM, undefined, DialogModes.NO );
+    // Copy Merged
+    //var idCpyM = charIDToTypeID( "CpyM" );
+    //executeAction( idCpyM, undefined, DialogModes.NO );
 
 }
 
