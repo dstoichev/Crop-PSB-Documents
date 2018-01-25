@@ -34,11 +34,10 @@ function main()
             bottomRightY = bounds[3],
             selectionWidth = bottomRightX - topLeftX,
             selectionHeight = bottomRightY - topLeftY,
-            region = Array(Array( topLeftX, topLeftY ),
-                           Array( topLeftX + selectionWidth, topLeftY ),
-                           Array( topLeftX + selectionWidth, topLeftY +selectionHeight ),
-                           Array( bottomRightX, bottomRightY ),
-                           Array( topLeftX, topLeftY ));
+            region = new Array(new Array( topLeftX, topLeftY ),
+                               new Array( topLeftX + selectionWidth, topLeftY ),
+                               new Array( topLeftX + selectionWidth, topLeftY +selectionHeight ),
+                               new Array( bottomRightX, bottomRightY ));
         
         doc.selection.select(region, SelectionType.REPLACE);
         
