@@ -122,6 +122,7 @@ function selectJustTheCrop()
         idSbtr = charIDToTypeID( "Sbtr" ),
         idTrgt = charIDToTypeID( "Trgt" ),
         idFrom = charIDToTypeID( "From" ),
+        idVrsn = charIDToTypeID( "Vrsn" ),
         idmaskParameters = stringIDToTypeID( "maskParameters" );
     
     ref4.putEnumerated( idChnl, idOrdn, idTrgt );
