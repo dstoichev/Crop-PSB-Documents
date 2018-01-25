@@ -36,9 +36,8 @@ function main()
             selectionHeight = bottomRightY - topLeftY,
             region = new Array(new Array( topLeftX, topLeftY ),
                                new Array( topLeftX + selectionWidth, topLeftY ),
-                               new Array( topLeftX + selectionWidth, topLeftY +selectionHeight ),
-                               new Array( bottomRightX, bottomRightY ),
-                               new Array( topLeftX, topLeftY ));
+                               new Array( topLeftX + selectionWidth, topLeftY + selectionHeight ),
+                               new Array( topLeftX, topLeftY + selectionHeight ));
         
         doc.selection.select(region, SelectionType.REPLACE);
         
