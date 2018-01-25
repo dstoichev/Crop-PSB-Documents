@@ -2,16 +2,7 @@
 
 #include "./include/json2.js"
 
-(function() {
-    var cs = new CropSaver();
-    
-    if (documents.length) {              
-        app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
-    }
-    else {
-        alert("Open one or more documents before running this script");
-    }
-    
+(function() {    
     function CropSaver() {
         this.savePath = '~/PS Dev/Action Target';
         
@@ -196,4 +187,13 @@
             executeAction( idSbtr, desc4, DialogModes.NO );
         }
     };
+    
+    var cs = new CropSaver();
+    
+    if (documents.length) {              
+        app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
+    }
+    else {
+        alert("Open one or more documents before running this script");
+    }
 })(); // Immediately-Invoked Function Expression (IIFE)
