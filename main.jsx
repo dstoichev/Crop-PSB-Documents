@@ -41,7 +41,7 @@ function main()
         
         doc.selection.select(region, SelectionType.REPLACE);
         
-        doc.selection.copy(true);
+        myCopyMerged();
   
         alertText = ''.concat(alertText, JSON.stringify(bounds),  "\n");
         alertText = ''.concat(alertText, doc.name, "\n\n");
@@ -64,6 +64,13 @@ function getSelectionBounds(doc) {
     bnds[i] = sbnds[i].as("px");
   }
   return bnds;
+}
+
+function myCopyMerged()
+{    
+    // Copy Merged
+    var idCpyM = charIDToTypeID( "CpyM" );
+    executeAction( idCpyM, undefined, DialogModes.NO );
 }
 
 function selectJustTheCrop()
@@ -128,11 +135,6 @@ function selectJustTheCrop()
     
     desc4.putBoolean( idmaskParameters, true );
     executeAction( idSbtr, desc4, DialogModes.NO );
-
-    // Copy Merged
-    //var idCpyM = charIDToTypeID( "CpyM" );
-    //executeAction( idCpyM, undefined, DialogModes.NO );
-
 }
 
 function saveJpeg(doc, tempDocWidthAsNumber, tempDocHeightAsNumber)
