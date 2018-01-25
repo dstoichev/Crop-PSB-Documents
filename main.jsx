@@ -37,7 +37,8 @@ function main()
             region = new Array(new Array( topLeftX, topLeftY ),
                                new Array( topLeftX + selectionWidth, topLeftY ),
                                new Array( topLeftX + selectionWidth, topLeftY +selectionHeight ),
-                               new Array( bottomRightX, bottomRightY ));
+                               new Array( bottomRightX, bottomRightY ),
+                               new Array( topLeftX, topLeftY ));
         
         doc.selection.select(region, SelectionType.REPLACE);
         
