@@ -79,12 +79,12 @@ function selectJustTheCrop()
         idOrdn = charIDToTypeID( "Ordn" ),
         idChnl = charIDToTypeID( "Chnl" ),
         idfsel = charIDToTypeID( "fsel" ),
+        idslct = charIDToTypeID( "slct" ),
         idMkVs = charIDToTypeID( "MkVs" );
     
     // Make the layer active    
     var desc1 = new ActionDescriptor(),
         ref1 = new ActionReference(),
-        idslct = charIDToTypeID( "slct" ),
         idLyr = charIDToTypeID( "Lyr " );
         
         
@@ -107,8 +107,7 @@ function selectJustTheCrop()
 
     // Make the mask active
     var desc3 = new ActionDescriptor(),
-        ref3 = new ActionReference(),
-        idslct = charIDToTypeID( "slct" ),
+        ref3 = new ActionReference(),        
         idMsk = charIDToTypeID( "Msk " );
     
     ref3.putEnumerated( idChnl, idChnl, idMsk );
