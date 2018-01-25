@@ -6,7 +6,7 @@ var savePath = '~/PS Dev/Action Target',
 function main()
 {
     var docs = app.documents,
-        alertText = ''.concat('Current open documents', "\n"),
+        alertText = ''.concat('Processed documents:', "\n"),
         doc, cropLayerReference;
         
     for (var i = 0; i < docs.length; i++)
@@ -19,11 +19,6 @@ function main()
         } catch (e) {
          
         }
-        
-//        cropLayerReference = doc.artLayers.getByName(cropLayerName);
-  //      doc.activeLayer = cropLayerReference;
-        
-    //    doc.selection.selectAll();
         
         selectJustTheCrop();
         
@@ -42,9 +37,10 @@ function main()
         doc.selection.select(region, SelectionType.REPLACE);
         
         myCopyMerged();
+        
+        doc.selection.deselect();
   
-        alertText = ''.concat(alertText, JSON.stringify(bounds),  "\n");
-        alertText = ''.concat(alertText, doc.name, "\n\n");
+        alertText = ''.concat(alertText, doc.name, "\n");
         saveJpeg(doc, selectionWidth, selectionHeight);
     }
     
