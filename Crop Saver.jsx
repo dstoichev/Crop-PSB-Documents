@@ -190,7 +190,16 @@
     
     var cs = new CropSaver();
     
-    if (documents.length) {              
+    if (documents.length) {
+        /*
+         suspendHistory(historyString, javaScriptString)
+         
+        Provides a single entry in history states for the entire script provided by javaScriptString .
+        Allows a single undo for all actions taken in the script.
+        The historyString parameter provides the string to use for the history state.
+        The javaScriptString parameter provides a string of JavaScript code to
+        excute while history is suspended.
+        */
         app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
     }
     else {
