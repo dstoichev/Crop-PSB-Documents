@@ -1,3 +1,5 @@
+#target photoshop
+
 #include "./include/json2.js"
 
 var savePath = '~/PS Dev/Action Target',
