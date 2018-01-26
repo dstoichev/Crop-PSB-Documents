@@ -1,8 +1,14 @@
 #target photoshop
 
-#include "./include/json2.js"
+#include "./../include/json2.js"
 
-(function() {    
+$.localize = true;
+$.locale = 'fr'; // test your french messages
+
+(function() {
+    CropSaverZStrings = {};
+    CropSaverZStrings.Yes = localize("$$$/JavaScripts/CropSaver/Yes=Yes");
+    
     function CropSaver() {
         this.savePath = '~/PS Dev/Action Target';
         
@@ -37,7 +43,7 @@
         init: function() {
             var originalRulerUnits = app.preferences.rulerUnits;
             app.preferences.rulerUnits = Units.PIXELS;
-            
+                        
             try {
                 this.main();
             } catch (e) {
@@ -51,11 +57,13 @@
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 currentlyActive = app.activeDocument,
-                doc, cropLayerRef;
+                doc, cropLayerRef, msg = {en: "Yes", fr: "Oui"};
                 
             for (var i = 0; i < docs.length; i++)
             {
                 doc = docs[i];
+                
+                alertText = ''.concat(alertText, msg, "\n");continue;
                 
                 cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
                 alert(typeof cropLayerRef); continue;
@@ -92,7 +100,7 @@
                 this.saveResult(doc, selectionWidth, selectionHeight);
             }
             
-            alert(alertText);    
+            alert(alertText);
         },
         
         /**
@@ -196,12 +204,12 @@
     
     if (documents.length) {
         /*
-         suspendHistory(historyString, javaScriptString)
+         suspendHistory(historyString, CropSavertring)
          
-        Provides a single entry in history states for the entire script provided by javaScriptString .
+        Provides a single entry in history states for the entire script provided by CropSavertring .
         Allows a single undo for all actions taken in the script.
         The historyString parameter provides the string to use for the history state.
-        The javaScriptString parameter provides a string of JavaScript code to
+        The CropSavertring parameter provides a string of JavaScript code to
         excute while history is suspended.
         */
         app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
@@ -210,3 +218,5 @@
         alert("Open one or more documents before running this script.");
     }
 })(); // Immediately-Invoked Function Expression (IIFE)
+
+$.locale = null; // restore locale
