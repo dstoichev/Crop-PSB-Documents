@@ -57,8 +57,18 @@
             {
                 doc = docs[i];
                 
-                cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
-                alert(typeof cropLayerRef); continue;
+                try {
+                    cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
+                } catch(e) {
+                    if ('No such element' == e.message) {
+                        alertText = ''.concat(alertText, doc.name, " - Warning: The 'CROP' layer is missing." "\n");
+                        continue;
+                    }
+                    else {
+                        throw (e);
+                    }
+                }
+                
                 app.activeDocument = doc;
                 
                 try {
