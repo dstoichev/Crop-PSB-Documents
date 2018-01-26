@@ -5,7 +5,7 @@ We need the images saved cropped via the CROP layer.
 We need the result file to take the file name of the document.
 
 # Installation:
- 1. Place "Crop Saver.jsx" in <Photoshop Directory>/presets/scripts/
+ 1. Place "Crop Saver" folder in <Photoshop Directory>/presets/scripts/
 
  2. Restart Photoshop
 
