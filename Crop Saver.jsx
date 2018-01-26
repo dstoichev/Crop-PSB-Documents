@@ -63,7 +63,7 @@
                 } catch(e) {                    
                     if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
                         // test both
-                        alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer is missing.", "\n", e.message, "\n\n");
+                        alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer is missing.",  "\n\n"); //"\n", e.message, "\n\n");
                         continue;
                     }
                     else {
