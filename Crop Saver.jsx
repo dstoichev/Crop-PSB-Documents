@@ -137,29 +137,6 @@
     };
     
     //
-    // Function: createLayerMask
-    // Description: Creates a layer mask for a layer optionally from the
-    //              current selection
-    // Input:  doc   - a Document
-    //         layer - a Layer
-    //         fromSelection - should mask be made from the current selection (opt)
-    // Return: <none>
-    //
-    psx.createLayerMask = function(doc, layer, fromSelection) {
-      var desc = new ActionDescriptor();
-      desc.putClass(cTID("Nw  "), cTID("Chnl"));
-      var ref = new ActionReference();
-      ref.putEnumerated(cTID("Chnl"), cTID("Chnl"), cTID("Msk "));
-      desc.putReference(cTID("At  "), ref);
-      if (fromSelection == true) {
-        desc.putEnumerated(cTID("Usng"), cTID("UsrM"), cTID("RvlS"));
-      } else {
-        desc.putEnumerated(cTID("Usng"), cTID("UsrM"), cTID("RvlA"));
-      }
-      executeAction(cTID("Mk  "), desc, DialogModes.NO);
-    };
-    
-    //
     // Function: hasLayerMask
     //           isLayerMaskEnabled
     //           disableLayerMask
@@ -173,11 +150,11 @@
     // Return: boolean or <none>
     //
     psx.hasLayerMask = function(doc, layer) {
-      return psx.getLayerDescriptor().hasKey(cTID("UsrM"));
+      return psx.getLayerDescriptor().hasKey(cTID("Msk "));
     };
     psx.isLayerMaskEnabled = function(doc, layer) {
       var desc = psx.getLayerDescriptor(doc, layer);
-      return (desc.hasKey(cTID("UsrM")) && desc.getBoolean(cTID("UsrM")));
+      return (desc.hasKey(cTID("Msk ")) && desc.getBoolean(cTID("Msk ")));
     };
     psx.disableLayerMask = function(doc, layer) {
       psx.setLayerMaskEnabledState(doc, layer, false);
@@ -196,7 +173,7 @@
       desc.putReference(cTID('null'), ref );
     
       var tdesc = new ActionDescriptor();
-      tdesc.putBoolean(cTID('UsrM'), state);
+      tdesc.putBoolean(cTID('Msk '), state);
       desc.putObject(cTID('T   '), cTID('Lyr '), tdesc);
     
       executeAction(cTID('setd'), desc, DialogModes.NO );
@@ -253,6 +230,22 @@
             executeAction( idCpyM, undefined, DialogModes.NO );
         },
         
+        /**
+         * Get the bounds of the current selection
+         *
+         * @param {Document} doc
+         * @returns {Array} A bound rectangle (in pixels)
+         */
+        getSelectionBounds: function(doc) {
+            var result = [],
+                selectionBounds = doc.selection.bounds;
+                
+            for (var i = 0; i < selectionBounds.length; i++) {
+              result[i] = selectionBounds[i].as("px");
+            }
+            return result;
+        },
+        
         init: function() {
             var originalRulerUnits = app.preferences.rulerUnits;
             app.preferences.rulerUnits = Units.PIXELS;
@@ -306,7 +299,7 @@
                 
                 this.selectJustTheCrop();
                 
-                var bounds = psx.getSelectionBounds(doc),
+                var bounds = this.getSelectionBounds(doc),
                     topLeftX = bounds[0],
                     topLeftY = bounds[1],
                     bottomRightX = bounds[2],
