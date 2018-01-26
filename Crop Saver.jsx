@@ -3,6 +3,145 @@
 #include "./include/json2.js"
 
 (function() {
+    //
+    //@show include
+    //
+    //
+    //
+    // psx.jsx
+    //   This file contains a collection code extracted from other parts
+    //   of xtools for use in production scripts written for Adobe.
+    //
+    // $Id: psx.jsx,v 1.63 2012/03/15 21:34:28 anonymous Exp $
+    // Copyright: (c)2011, xbytor
+    // Author: xbytor@gmail.com
+    //
+    //@show include
+    //    
+    // !!! Only an EXTRACT from psx.jsx !!!
+    // @see http://ps-scripts.sourceforge.net/xtools.html
+    //
+
+    //
+    // psx works as a namespace for commonly used functions
+    //
+    psx = function() {};
+
+    //
+    // Function: getLayerDescriptor
+    // Description: Gets the ActionDescriptor for a layer
+    // Input:  doc   - a Document
+    //         layer - a Layer
+    // Return: an ActionDescriptor
+    //
+    psx.getLayerDescriptor = function(doc, layer) {
+      var ref = new ActionReference();
+      ref.putEnumerated(cTID("Lyr "), cTID("Ordn"), cTID("Trgt"));
+      return executeActionGet(ref);
+    };
+    
+    //
+    // Function: createLayerMask
+    // Description: Creates a layer mask for a layer optionally from the
+    //              current selection
+    // Input:  doc   - a Document
+    //         layer - a Layer
+    //         fromSelection - should mask be made from the current selection (opt)
+    // Return: <none>
+    //
+    psx.createLayerMask = function(doc, layer, fromSelection) {
+      var desc = new ActionDescriptor();
+      desc.putClass(cTID("Nw  "), cTID("Chnl"));
+      var ref = new ActionReference();
+      ref.putEnumerated(cTID("Chnl"), cTID("Chnl"), cTID("Msk "));
+      desc.putReference(cTID("At  "), ref);
+      if (fromSelection == true) {
+        desc.putEnumerated(cTID("Usng"), cTID("UsrM"), cTID("RvlS"));
+      } else {
+        desc.putEnumerated(cTID("Usng"), cTID("UsrM"), cTID("RvlA"));
+      }
+      executeAction(cTID("Mk  "), desc, DialogModes.NO);
+    };
+    
+    //
+    // Function: hasLayerMask
+    //           isLayerMaskEnabled
+    //           disableLayerMask
+    //           enableLayerMask
+    //           setLayerMaskEnabledState
+    // Description: A collection of functions dealing with the state
+    //              of a layer's mask.
+    //              
+    // Input:  doc   - a Document
+    //         layer - a Layer
+    // Return: boolean or <none>
+    //
+    psx.hasLayerMask = function(doc, layer) {
+      return psx.getLayerDescriptor().hasKey(cTID("UsrM"));
+    };
+    psx.isLayerMaskEnabled = function(doc, layer) {
+      var desc = psx.getLayerDescriptor(doc, layer);
+      return (desc.hasKey(cTID("UsrM")) && desc.getBoolean(cTID("UsrM")));
+    };
+    psx.disableLayerMask = function(doc, layer) {
+      psx.setLayerMaskEnabledState(doc, layer, false);
+    };
+    psx.enableLayerMask = function(doc, layer) {
+      psx.setLayerMaskEnabledState(doc, layer, true);
+    };
+    psx.setLayerMaskEnabledState = function(doc, layer, state) {
+      if (state == undefined) {
+        state = false;
+      }
+      var desc = new ActionDescriptor();
+    
+      var ref = new ActionReference();
+      ref.putEnumerated(cTID('Lyr '), cTID('Ordn'), cTID('Trgt'));
+      desc.putReference(cTID('null'), ref );
+    
+      var tdesc = new ActionDescriptor();
+      tdesc.putBoolean(cTID('UsrM'), state);
+      desc.putObject(cTID('T   '), cTID('Lyr '), tdesc);
+    
+      executeAction(cTID('setd'), desc, DialogModes.NO );
+    };
+    
+    //
+    // Function: getSelectionBounds
+    // Description: Get the bounds of the current selection
+    // Input:  doc  - a Document
+    // Return: a bound rectangle (in pixels)
+    //
+    psx.getSelectionBounds = function(doc) {
+      var bnds = [];
+      var sbnds = doc.selection.bounds;
+      for (var i = 0; i < sbnds.length; i++) {
+        bnds[i] = sbnds[i].as("px");
+      }
+      return bnds;
+    };
+    
+    //
+    // Function: hasSelection
+    // Input:  doc  - a Document
+    // Return: returns true if the document has as selection, false if not
+    //
+    psx.hasSelection = function(doc) {
+      var res = false;
+    
+      var as = doc.activeHistoryState;
+      doc.selection.deselect();
+      if (as != doc.activeHistoryState) {
+        res = true;
+        doc.activeHistoryState = as;
+      }
+    
+      return res;
+    };
+
+    // EOF EXTRACT from psx.jsx;
+
+    
     function CropSaver() {
         this.savePath = '~/PS Dev/Action Target';
         
@@ -16,22 +155,6 @@
         copyMerged: function() {    
             var idCpyM = charIDToTypeID( "CpyM" );
             executeAction( idCpyM, undefined, DialogModes.NO );
-        },
-        
-        /**
-         * Get the bounds of the current selection
-         *
-         * @param {Document} doc
-         * @returns {Array} A bound rectangle (in pixels)
-         */
-        getSelectionBounds: function(doc) {
-            var result = [],
-                selectionBounds = doc.selection.bounds;
-                
-            for (var i = 0; i < selectionBounds.length; i++) {
-              result[i] = selectionBounds[i].as("px");
-            }
-            return result;
         },
         
         init: function() {
@@ -71,6 +194,11 @@
                     }
                 }
                 
+                if (!psx.hasLayerMask(doc, cropLayerRef)) {
+                    alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer has no mask.",  "\n\n");
+                    continue;
+                }
+                
                 app.activeDocument = doc;
                 
                 try {
@@ -82,7 +210,7 @@
                 
                 this.selectJustTheCrop();
                 
-                var bounds = this.getSelectionBounds(doc),
+                var bounds = psx.getSelectionBounds(doc),
                     topLeftX = bounds[0],
                     topLeftY = bounds[1],
                     bottomRightX = bounds[2],
