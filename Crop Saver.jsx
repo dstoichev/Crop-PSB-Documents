@@ -1,14 +1,8 @@
 #target photoshop
 
-#include "./../include/json2.js"
-
-$.localize = true;
-$.locale = 'fr'; // test your french messages
+#include "./include/json2.js"
 
 (function() {
-    CropSaverZStrings = {};
-    CropSaverZStrings.Yes = localize("$$$/JavaScripts/CropSaver/Yes=Yes");
-    
     function CropSaver() {
         this.savePath = '~/PS Dev/Action Target';
         
@@ -57,13 +51,11 @@ $.locale = 'fr'; // test your french messages
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 currentlyActive = app.activeDocument,
-                doc, cropLayerRef, msg = {en: "Yes", fr: "Oui"};
+                doc, cropLayerRef;
                 
             for (var i = 0; i < docs.length; i++)
             {
                 doc = docs[i];
-                
-                alertText = ''.concat(alertText, msg, "\n");continue;
                 
                 cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
                 alert(typeof cropLayerRef); continue;
@@ -218,5 +210,3 @@ $.locale = 'fr'; // test your french messages
         alert("Open one or more documents before running this script.");
     }
 })(); // Immediately-Invoked Function Expression (IIFE)
-
-$.locale = null; // restore locale
