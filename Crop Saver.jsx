@@ -150,11 +150,21 @@
     // Return: boolean or <none>
     //
     psx.hasLayerMask = function(doc, layer) {
-      return psx.getLayerDescriptor().hasKey(cTID("Msk "));
+        var d = psx.getLayerDescriptor(doc, layer);
+        /*
+        var keys = ''.concat('Layer ', d.getString(cTID('Nm  ')), "\n");
+        
+        for (var i = 0; i < d.count; i++)
+        {
+            keys = keys.concat(id2char(d.getKey(i) ), "\n");
+        }
+        alert(keys);
+        */
+      return d.hasKey(cTID("UsrM"));
     };
     psx.isLayerMaskEnabled = function(doc, layer) {
       var desc = psx.getLayerDescriptor(doc, layer);
-      return (desc.hasKey(cTID("Msk ")) && desc.getBoolean(cTID("Msk ")));
+      return (desc.hasKey(cTID("UsrM")) && desc.getBoolean(cTID("UsrM")));
     };
     psx.disableLayerMask = function(doc, layer) {
       psx.setLayerMaskEnabledState(doc, layer, false);
@@ -173,7 +183,7 @@
       desc.putReference(cTID('null'), ref );
     
       var tdesc = new ActionDescriptor();
-      tdesc.putBoolean(cTID('Msk '), state);
+      tdesc.putBoolean(cTID('UsrM'), state);
       desc.putObject(cTID('T   '), cTID('Lyr '), tdesc);
     
       executeAction(cTID('setd'), desc, DialogModes.NO );
@@ -262,13 +272,14 @@
         main: function() {
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
-                currentlyActive = app.activeDocument,
                 okTextlineFeed = "\n\n",
-                doc;
+                doc, cropLayerRef;
                 
             for (var i = 0; i < docs.length; i++)
             {
                 doc = docs[i];
+                
+                app.activeDocument = doc;
                 
                 try {
                     cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
@@ -288,8 +299,6 @@
                     continue;
                 }
                 
-                app.activeDocument = doc;
-                
                 try {
                     // Clean up selection, if any
                     doc.selection.clear();
@@ -305,14 +314,14 @@
                     bottomRightX = bounds[2],
                     bottomRightY = bounds[3],
                     selectionWidth = bottomRightX - topLeftX,
-                    selectionHeight = bottomRightY - topLeftY,
+                    selectionHeight = bottomRightY - topLeftY; /*,
                     region = new Array(new Array( topLeftX, topLeftY ),
                                        new Array( topLeftX + selectionWidth, topLeftY ),
                                        new Array( topLeftX + selectionWidth, topLeftY + selectionHeight ),
                                        new Array( topLeftX, topLeftY + selectionHeight ));
                 
                 doc.selection.select(region, SelectionType.REPLACE); // TODO: do we need this
-                
+                */
                 this.copyMerged();
                 
                 doc.selection.deselect();
