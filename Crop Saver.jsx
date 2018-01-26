@@ -19,8 +19,104 @@
     //@show include
     //    
     // !!! Only an EXTRACT from psx.jsx !!!
-    // @see http://ps-scripts.sourceforge.net/xtools.html
+    // http://ps-scripts.sourceforge.net/xtools.html
     //
+    
+    cTID = function(s) { return cTID[s] || (cTID[s] = app.charIDToTypeID(s)); };
+    sTID = function(s) { return sTID[s] || (sTID[s] = app.stringIDToTypeID(s)); };
+    
+    // return an ID for whatever s might be
+    xTID = function(s) {
+      if (s.constructor == Number) {
+        return s;
+      }
+      try {
+        if (s instanceof XML) {
+          var k = s.nodeKind();
+          if (k == 'text' || k == 'attribute') {
+            s = s.toString();
+          }
+        }
+      } catch (e) {
+      }
+    
+      if (s.constructor == String) {
+        if (s.length > 0) {
+          if (s.length != 4) return sTID(s);
+          try { return cTID(s); } catch (e) { return sTID(s); }
+        }
+      }
+      Error.runtimeError(19, s);  // Bad Argument
+    
+      return undefined;
+    };
+    
+    //
+    // Convert a 32 bit ID back to either a 4 character representation or the
+    // mapped string representation.
+    //
+    id2char = function(s) {
+      if (isNaN(Number(s))){
+        return '';
+      }
+      var v;
+    
+      var lvl = $.level;
+      $.level = 0;
+      try {
+        if (!v) {
+          try { v = app.typeIDToCharID(s); } catch (e) {}
+        }
+        if (!v) {
+          try { v = app.typeIDToStringID(s); } catch (e) {}
+        }
+      } catch (e) {
+      }
+      $.level = lvl;
+    
+      if (!v) {
+        // neither of the builtin PS functions know about this ID so we
+        // force the matter
+        v = psx.numberToAscii(s);
+      }
+    
+      return v ? v : s;
+    };
+    
+    
+    //
+    // What platform are we on?
+    //
+    isWindows = function() { return $.os.match(/windows/i); };
+    isMac = function() { return !isWindows(); };
+    
+    //
+    // Which app are we running in?
+    //
+    isPhotoshop = function() { return !!app.name.match(/photoshop/i); };
+    isBridge = function() { return !!app.name.match(/bridge/i); };
+    
+    //
+    // Which CS version is this?
+    //
+    CSVersion = function() {
+      var rev = Number(app.version.match(/^\d+/)[0]);
+      return isPhotoshop() ? (rev - 7) : rev;
+    };
+    CSVersion._version = CSVersion();
+    
+    // not happy about the CS7+ definitions
+    isCC2015 = function()  { return CSVersion._version == 9; };
+    isCC2014 = function()  { return CSVersion._version == 8; }; 
+    isCC     = function()  { return CSVersion._version == 7; }; 
+    isCS7    = function()  { return CSVersion._version == 7; };
+    isCS6    = function()  { return CSVersion._version == 6; };
+    isCS5    = function()  { return CSVersion._version == 5; };
+    isCS4    = function()  { return CSVersion._version == 4; };
+    isCS3    = function()  { return CSVersion._version == 3; };
+    isCS2    = function()  { return CSVersion._version == 2; };
+    isCS     = function()  { return CSVersion._version == 1; };
+
 
     //
     // psx works as a namespace for commonly used functions
