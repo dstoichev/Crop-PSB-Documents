@@ -51,17 +51,18 @@
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 currentlyActive = app.activeDocument,
-                doc, cropLayerRef;
+                okTextlineFeed = "\n\n",
+                doc;
                 
             for (var i = 0; i < docs.length; i++)
             {
                 doc = docs[i];
                 
                 try {
-                    cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
-                } catch(e) {
-                    if ('No such element' == e.message) {
-                        alertText = ''.concat(alertText, doc.name, " - Warning: The 'CROP' layer is missing." "\n");
+                    cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
+                } catch(e) {                    
+                    if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
+                        alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer is missing.", "\n", e.message, "\n\n");
                         continue;
                     }
                     else {
@@ -97,8 +98,10 @@
                 this.copyMerged();
                 
                 doc.selection.deselect();
+                
+                okTextlineFeed = (docs.length - 1 != i) ? okTextlineFeed : "\n";
           
-                alertText = ''.concat(alertText, doc.name, "\n");
+                alertText = ''.concat(alertText, doc.name, ' - OK.', okTextlineFeed);
                 this.saveResult(doc, selectionWidth, selectionHeight);
             }
             
