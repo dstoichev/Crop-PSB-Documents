@@ -50,11 +50,15 @@
         main: function() {
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
-                doc;
+                currentlyActive = app.activeDocument,
+                doc, cropLayerRef;
                 
             for (var i = 0; i < docs.length; i++)
             {
                 doc = docs[i];
+                
+                cropLayerRef = currentlyActive.artLayers.getByName(this.cropLayerName);
+                alert(typeof cropLayerRef); continue;
                 app.activeDocument = doc;
                 
                 try {
@@ -203,6 +207,6 @@
         app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
     }
     else {
-        alert("Open one or more documents before running this script");
+        alert("Open one or more documents before running this script.");
     }
 })(); // Immediately-Invoked Function Expression (IIFE)
