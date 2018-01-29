@@ -253,8 +253,9 @@
      @type Boolean
     */
     CropSaverUi.prototype = {
-        run: function() {
+        prepareWindow: function() {
             var that = this;
+            
             // Create a window of type dialog.
             this.windowRef = new Window("dialog", this.title);
             
@@ -265,18 +266,13 @@
             this.windowRef.btnPanel.cancelBtn = this.windowRef.btnPanel.add("button", [120, 65, 210, 85], "Cancel");
             // Register event listeners that define the button behavior
             this.windowRef.btnPanel.okBtn.onClick = function() {
-                alert("OK pressed");
                 that.windowRef.close(0);
             };
             this.windowRef.btnPanel.cancelBtn.onClick = function() {
-                alert("Cancel pressed");
                 that.windowRef.close(-1);
             };
-        
-            // Display the this.windowRefdow
-            this.windowRef.show();
-                
-            return true;                
+            
+            return this.windowRef;
         }
     };
 
@@ -288,7 +284,7 @@
         
         this.opts = {
             saveResultsDestinationPath: '',
-            resultsImageType = 'JPEG',
+            resultsImageType: 'JPEG',
             wantSmallSize: false
         };
     }
@@ -309,10 +305,11 @@
             try {
                 var ui = new CropSaverUi(this.opts),
                     alertText = ''.concat('Crop Saver Preferences:', "\n"),
-                    result = ui.run();
+                    win = ui.prepareWindow(),
+                    result = win.show();
                 
-                alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
-                
+                alertText = alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
+                alert(alertText);
                 //this.main();
             } catch (e) {
                 alert(e);
