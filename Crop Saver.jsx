@@ -3,6 +3,46 @@
 #include "./include/json2.js"
 
 (function() {
+    function CropSaverUi() {
+        this.windowRef = null;
+    }
+    
+    /**
+     Functional part of this snippet. 
+     
+     Create a window of type "palette" (a modeless dialog) and display it.
+    
+     @return True if the snippet ran as expected, false otherwise.
+     @type Boolean
+    */
+    CropSaverUi.prototype = {
+        run: function() {    
+            // Create a window of type modal.
+            var win = new Window("modal", "Crop Saver", [100, 100, 380, 245]);  // bounds = [left, top, right, bottom]
+            this.windowRef = win;
+            // Add a frame for the contents.
+            win.btnPanel = win.add("panel", [25, 15, 255, 130], "This is a test");
+            // Add the components, two buttons
+            win.btnPanel.okBtn = win.btnPanel.add("button", [15, 65, 105, 85], "OK");
+            win.btnPanel.cancelBtn = win.btnPanel.add("button", [120, 65, 210, 85], "Cancel");
+            // Register event listeners that define the button behavior
+            win.btnPanel.okBtn.onClick = function() {
+                alert("OK pressed");
+                win.close();
+            };
+            win.btnPanel.cancelBtn.onClick = function() {
+                alert("Cancel pressed");
+                win.close();
+            };
+        
+            // Display the window
+            win.show();
+                
+            return true;                
+        }
+    }
+    
+    
     //
     //@show include
     //
@@ -246,7 +286,9 @@
             app.preferences.rulerUnits = Units.PIXELS;
                         
             try {
-                this.main();
+                var ui = new CropSaverUi();
+                ui.run();
+                //this.main();
             } catch (e) {
                 alert(e);
             }
