@@ -15,6 +15,7 @@
     // $Id: psx.jsx,v 1.63 2012/03/15 21:34:28 anonymous Exp $
     // Copyright: (c)2011, xbytor
     // Author: xbytor@gmail.com
+    // License: http://www.opensource.org/licenses/bsd-license.php
     //
     //@show include
     //    
@@ -240,22 +241,6 @@
             executeAction( idCpyM, undefined, DialogModes.NO );
         },
         
-        /**
-         * Get the bounds of the current selection
-         *
-         * @param {Document} doc
-         * @returns {Array} A bound rectangle (in pixels)
-         */
-        getSelectionBounds: function(doc) {
-            var result = [],
-                selectionBounds = doc.selection.bounds;
-                
-            for (var i = 0; i < selectionBounds.length; i++) {
-              result[i] = selectionBounds[i].as("px");
-            }
-            return result;
-        },
-        
         init: function() {
             var originalRulerUnits = app.preferences.rulerUnits;
             app.preferences.rulerUnits = Units.PIXELS;
@@ -273,6 +258,7 @@
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 okTextlineFeed = "\n\n",
+                mustDisableTheLayerMask = false,
                 doc, cropLayerRef;
                 
             for (var i = 0; i < docs.length; i++)
@@ -299,16 +285,19 @@
                     continue;
                 }
                 
+                if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {
+                    mustDisableTheLayerMask = true; // after finishing our job with it
+                    psx.enableLayerMask(doc, cropLayerRef);
+                }
+                
                 try {
                     // Clean up selection, if any
                     doc.selection.clear();
-                } catch (e) {
-                 
-                }
+                } catch (e) {}
                 
                 this.selectJustTheCrop();
                 
-                var bounds = this.getSelectionBounds(doc),
+                var bounds = psx.getSelectionBounds(doc),
                     topLeftX = bounds[0],
                     topLeftY = bounds[1],
                     bottomRightX = bounds[2],
@@ -325,6 +314,11 @@
                 this.copyMerged();
                 
                 doc.selection.deselect();
+                
+                if (mustDisableTheLayerMask) {
+                    mustDisableTheLayerMask = false;
+                    psx.disableLayerMask(doc, cropLayerRef);
+                }
                 
                 okTextlineFeed = (docs.length - 1 != i) ? okTextlineFeed : "\n";
           
