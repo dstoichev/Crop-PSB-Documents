@@ -258,6 +258,7 @@
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 okTextlineFeed = "\n\n",
+                mustHideTheLayer = false,
                 mustDisableTheLayerMask = false,
                 doc, cropLayerRef;
                 
@@ -280,14 +281,19 @@
                     }
                 }
                 
+                if (false == cropLayerRef.visible) {
+                    cropLayerRef.visible = true;
+                    mustHideTheLayer = true; // after finishing our job with it
+                }
+                
                 if (!psx.hasLayerMask(doc, cropLayerRef)) {
                     alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer has no mask.",  "\n\n");
                     continue;
                 }
                 
-                if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {
-                    mustDisableTheLayerMask = true; // after finishing our job with it
+                if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
                     psx.enableLayerMask(doc, cropLayerRef);
+                    mustDisableTheLayerMask = true; // after finishing our job with it
                 }
                 
                 try {
@@ -303,14 +309,8 @@
                     bottomRightX = bounds[2],
                     bottomRightY = bounds[3],
                     selectionWidth = bottomRightX - topLeftX,
-                    selectionHeight = bottomRightY - topLeftY; /*,
-                    region = new Array(new Array( topLeftX, topLeftY ),
-                                       new Array( topLeftX + selectionWidth, topLeftY ),
-                                       new Array( topLeftX + selectionWidth, topLeftY + selectionHeight ),
-                                       new Array( topLeftX, topLeftY + selectionHeight ));
-                
-                doc.selection.select(region, SelectionType.REPLACE); // TODO: do we need this
-                */
+                    selectionHeight = bottomRightY - topLeftY; 
+                    
                 this.copyMerged();
                 
                 doc.selection.deselect();
@@ -318,6 +318,11 @@
                 if (mustDisableTheLayerMask) {
                     mustDisableTheLayerMask = false;
                     psx.disableLayerMask(doc, cropLayerRef);
+                }
+                
+                if (mustHideTheLayer) {
+                    cropLayerRef.visible = false;
+                    mustHideTheLayer = false;
                 }
                 
                 okTextlineFeed = (docs.length - 1 != i) ? okTextlineFeed : "\n";
