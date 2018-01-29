@@ -17,8 +17,8 @@
     */
     CropSaverUi.prototype = {
         run: function() {    
-            // Create a window of type modal.
-            var win = new Window("modal", "Crop Saver", [100, 100, 380, 245]);  // bounds = [left, top, right, bottom]
+            // Create a window of type dialog.
+            var win = new Window("dialog", "Crop Saver", [100, 100, 380, 245]);  // bounds = [left, top, right, bottom]
             this.windowRef = win;
             // Add a frame for the contents.
             win.btnPanel = win.add("panel", [25, 15, 255, 130], "This is a test");
