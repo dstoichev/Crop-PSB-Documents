@@ -3,46 +3,6 @@
 #include "./include/json2.js"
 
 (function() {
-    function CropSaverUi() {
-        this.windowRef = null;
-    }
-    
-    /**
-     Functional part of this snippet. 
-     
-     Create a window of type "palette" (a modeless dialog) and display it.
-    
-     @return True if the snippet ran as expected, false otherwise.
-     @type Boolean
-    */
-    CropSaverUi.prototype = {
-        run: function() {    
-            // Create a window of type dialog.
-            var win = new Window("dialog", "Crop Saver", [100, 100, 380, 245]);  // bounds = [left, top, right, bottom]
-            this.windowRef = win;
-            // Add a frame for the contents.
-            win.btnPanel = win.add("panel", [25, 15, 255, 130], "This is a test");
-            // Add the components, two buttons
-            win.btnPanel.okBtn = win.btnPanel.add("button", [15, 65, 105, 85], "OK");
-            win.btnPanel.cancelBtn = win.btnPanel.add("button", [120, 65, 210, 85], "Cancel");
-            // Register event listeners that define the button behavior
-            win.btnPanel.okBtn.onClick = function() {
-                alert("OK pressed");
-                win.close();
-            };
-            win.btnPanel.cancelBtn.onClick = function() {
-                alert("Cancel pressed");
-                win.close();
-            };
-        
-            // Display the window
-            win.show();
-                
-            return true;                
-        }
-    }
-    
-    
     //
     //@show include
     //
@@ -264,12 +224,73 @@
     };
 
     // EOF EXTRACT from psx.jsx;
+    
+    
+    /**
+     * @param{Object} opts - passed by reference
+     */
+    function CropSaverUi(opts) {
+        this.bounds = {
+            x: 200,
+            y: 200,
+            width: 650,
+            height: 420
+        };
+        
+        this.opts = opts;
+        
+        this.title = 'Saving Preferences';
+        
+        this.windowRef = null;
+    }
+    
+    /**
+     Functional part of this snippet. 
+     
+     Create a window of type "palette" (a modeless dialog) and display it.
+    
+     @return True if the snippet ran as expected, false otherwise.
+     @type Boolean
+    */
+    CropSaverUi.prototype = {
+        run: function() {
+            var that = this;
+            // Create a window of type dialog.
+            this.windowRef = new Window("dialog", this.title);
+            
+            // Add a frame for the contents.
+            this.windowRef.btnPanel = this.windowRef.add("panel", [25, 15, 255, 130], "This is a test");
+            // Add the components, two buttons
+            this.windowRef.btnPanel.okBtn = this.windowRef.btnPanel.add("button", [15, 65, 105, 85], "OK");
+            this.windowRef.btnPanel.cancelBtn = this.windowRef.btnPanel.add("button", [120, 65, 210, 85], "Cancel");
+            // Register event listeners that define the button behavior
+            this.windowRef.btnPanel.okBtn.onClick = function() {
+                alert("OK pressed");
+                that.windowRef.close(0);
+            };
+            this.windowRef.btnPanel.cancelBtn.onClick = function() {
+                alert("Cancel pressed");
+                that.windowRef.close(-1);
+            };
+        
+            // Display the this.windowRefdow
+            this.windowRef.show();
+                
+            return true;                
+        }
+    };
 
     
     function CropSaver() {
         this.savePath = '~/PS Dev/Action Target';
         
         this.cropLayerName = 'CROP';
+        
+        this.opts = {
+            saveResultsDestinationPath: '',
+            resultsImageType = 'JPEG',
+            wantSmallSize: false
+        };
     }
     
     CropSaver.prototype = {
@@ -286,8 +307,12 @@
             app.preferences.rulerUnits = Units.PIXELS;
                         
             try {
-                var ui = new CropSaverUi();
-                ui.run();
+                var ui = new CropSaverUi(this.opts),
+                    alertText = ''.concat('Crop Saver Preferences:', "\n"),
+                    result = ui.run();
+                
+                alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
+                
                 //this.main();
             } catch (e) {
                 alert(e);
