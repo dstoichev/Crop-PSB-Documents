@@ -230,12 +230,7 @@
      * @param{Object} opts - passed by reference
      */
     function CropSaverUi(opts) {
-        this.bounds = {
-            x: 200,
-            y: 200,
-            width: 650,
-            height: 420
-        };
+        this.bounds = "{x: 200, y: 200, width: 650, height: 420}";
         
         this.docNote = ''.concat('A series of documents is OPEN in Photoshop.',
                                  'They are layered documents with a layer in the document called CROP.',
@@ -251,26 +246,62 @@
     CropSaverUi.prototype = {
         prepareWindow: function() {
             var that = this;
+            // Define the resource specification string,
+            // which specifies all of the components for the 
+            // Image Saving Preferences dialog.
+            var resource =
+            "dialog { orientation:'column', alignChildren: 'fill', \
+                text: '"+this.title+"', bounds:"+this.bounds+", \
+                notePnl: Panel { orientation:'column', alignChildren:['right', 'top'],\
+                    text: 'Messages', \
+                    title: Group { \
+                        st: StaticText { text:'Alert box title:' }, \
+                        et: EditText { text:'Sample Alert', characters:35 } \
+                    }, \
+                    msg: Group { \
+                        st: StaticText { text:'Alert message:' }, \
+                        et: EditText { properties:{multiline:true}, \
+                            text:'<your message here>' \
+                        } \
+                    }, \
+                    msgWidth: Group { \
+                        st: StaticText { text:'Message width:' }, \
+                        sl: Slider { minvalue:100, maxvalue:300, value:150 }, \
+                        et: EditText { characters:4, justify:'right' } \
+                    }, \
+                    msgHeight: Group { \
+                        st: StaticText { text:'Message height:' }, \
+                        sl: Slider { minvalue:20, maxvalue:300 }, \
+                        et: EditText { characters:4, justify:'right' } \
+                    } \
+                }, \
+                hasBtnsCb: Checkbox { \
+                    alignment:'center', text:'Has alert buttons?', value:true \
+                }, \
+                alertBtnsPnl: Panel { orientation:'row', \
+                    text: 'Button alignment', \
+                    alignLeftRb: RadioButton { text:'Left' }, \
+                    alignCenterRb: RadioButton { text:'Center', value:true }, \
+                    alignRightRb: RadioButton { text:'Right' } \
+                }, \
+                btnGrp: Group { orientation:'row', \
+                    processBtn: Button { text:'Process', properties:{name:'ok'} }, \
+                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
+                } \
+            }";
             
             // Create a window of type dialog.
-            this.windowRef = new Window("dialog", this.title);
-            this.windowRef.bounds = this.bounds;
+            this.windowRef = new Window(resource);
             
-            this.windowRef.notePanel = this.windowRef.add('panel', undefined, 'Note');
-            this.windowRef.notePanel.noteStatic = this.windowRef.notePanel.add('statictext', undefined, this.docNote);
-            
-            // Add a frame for the contents.
-            this.windowRef.btnPanel = this.windowRef.add("panel", [25, 15, 255, 130], "This is a test");
-            // Add the components, two buttons
-            this.windowRef.btnPanel.okBtn = this.windowRef.btnPanel.add("button", [15, 65, 105, 85], "OK");
-            this.windowRef.btnPanel.cancelBtn = this.windowRef.btnPanel.add("button", [120, 65, 210, 85], "Cancel");
             // Register event listeners that define the button behavior
-            this.windowRef.btnPanel.okBtn.onClick = function() {
+            this.windowRef.btnGrp.processBtn.onClick = function() {
                 that.windowRef.close(0);
             };
-            this.windowRef.btnPanel.cancelBtn.onClick = function() {
+            this.windowRef.btnGrp.cancelBtn.onClick = function() {
                 that.windowRef.close(-1);
             };
+            
+            this.windowRef.center();
             
             return this.windowRef;
         }
