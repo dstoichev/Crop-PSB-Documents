@@ -265,7 +265,7 @@
                                      properties: {multiline: true} \
                     }, \
                 }, \
-                btnGrp: Group { orientation:'row', \
+                btnGrp: Group { orientation:'row', alignment: 'right', \
                     processBtn: Button { text:'Process', properties:{name:'ok'} }, \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
                 } \
@@ -281,7 +281,7 @@
                 that.windowRef.close(0);
             };
             this.windowRef.btnGrp.cancelBtn.onClick = function() {
-                that.windowRef.close(-1);
+                that.windowRef.close(2);
             };
             
             this.windowRef.center();
@@ -292,7 +292,8 @@
 
     
     function CropSaver() {
-        this.savePath = '~/PS Dev/Action Target';
+        //this.savePath = '~/PS Dev/Action Target';
+        this.savePath = Folder.myDocuments;
         
         this.cropLayerName = 'CROP';
         
@@ -322,9 +323,13 @@
                     win = ui.prepareWindow(),
                     result = win.show();
                 
-                alertText = alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
-                alert(alertText);
-                //this.main();
+                //alertText = alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
+                //alert(alertText);
+                
+                if (2 != result) {
+                    this.main();
+                }
+                
             } catch (e) {
                 alert(e);
             }
