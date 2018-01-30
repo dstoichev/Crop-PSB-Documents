@@ -230,11 +230,13 @@
      * @param{Object} opts - passed by reference
      */
     function CropSaverUi(opts) {
-        this.bounds = "{x: 200, y: 200, width: 650, height: 420}";
+        this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
-        this.docNote = ''.concat('A series of documents is OPEN in Photoshop.',
-                                 'They are layered documents with a layer in the document called CROP.',
-                                 'This script saves the images cropped via the CROP layer.');
+        this.docNote1 = ''.concat('A series of documents is OPEN in Photoshop. ',
+                                  'They are layered documents. SOME of them have a layer called CROP.');
+        
+        this.docNote2 = ''.concat('This script saves the images cropped via the CROP layer ',
+                                  'when this layer exists and the image AS IS when the layer is absent.');
         
         this.opts = opts;
         
@@ -251,38 +253,17 @@
             // Image Saving Preferences dialog.
             var resource =
             "dialog { orientation:'column', alignChildren: 'fill', \
-                text: '"+this.title+"', bounds:"+this.bounds+", \
-                notePnl: Panel { orientation:'column', alignChildren:['right', 'top'],\
-                    text: 'Messages', \
-                    title: Group { \
-                        st: StaticText { text:'Alert box title:' }, \
-                        et: EditText { text:'Sample Alert', characters:35 } \
+                text: '"+this.title+"', frameLocation:[100, 100],  \
+                notePnl: Panel { \
+                    text: 'Note', \
+                    st1: StaticText { text: '', \
+                                     characters: 60, \
+                                     properties: {multiline: true} \
                     }, \
-                    msg: Group { \
-                        st: StaticText { text:'Alert message:' }, \
-                        et: EditText { properties:{multiline:true}, \
-                            text:'<your message here>' \
-                        } \
+                    st2: StaticText { text: '', \
+                                     characters: 60, \
+                                     properties: {multiline: true} \
                     }, \
-                    msgWidth: Group { \
-                        st: StaticText { text:'Message width:' }, \
-                        sl: Slider { minvalue:100, maxvalue:300, value:150 }, \
-                        et: EditText { characters:4, justify:'right' } \
-                    }, \
-                    msgHeight: Group { \
-                        st: StaticText { text:'Message height:' }, \
-                        sl: Slider { minvalue:20, maxvalue:300 }, \
-                        et: EditText { characters:4, justify:'right' } \
-                    } \
-                }, \
-                hasBtnsCb: Checkbox { \
-                    alignment:'center', text:'Has alert buttons?', value:true \
-                }, \
-                alertBtnsPnl: Panel { orientation:'row', \
-                    text: 'Button alignment', \
-                    alignLeftRb: RadioButton { text:'Left' }, \
-                    alignCenterRb: RadioButton { text:'Center', value:true }, \
-                    alignRightRb: RadioButton { text:'Right' } \
                 }, \
                 btnGrp: Group { orientation:'row', \
                     processBtn: Button { text:'Process', properties:{name:'ok'} }, \
@@ -292,6 +273,8 @@
             
             // Create a window of type dialog.
             this.windowRef = new Window(resource);
+            this.windowRef.notePnl.st1.text = this.docNote1;
+            this.windowRef.notePnl.st2.text = this.docNote2;
             
             // Register event listeners that define the button behavior
             this.windowRef.btnGrp.processBtn.onClick = function() {
