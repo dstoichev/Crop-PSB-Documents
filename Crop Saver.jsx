@@ -237,27 +237,27 @@
             height: 420
         };
         
+        this.docNote = ''.concat('A series of documents is OPEN in Photoshop.',
+                                 'They are layered documents with a layer in the document called CROP.',
+                                 'This script saves the images cropped via the CROP layer.');
+        
         this.opts = opts;
         
-        this.title = 'Saving Preferences';
+        this.title = 'Image Saving Preferences';
         
         this.windowRef = null;
     }
-    
-    /**
-     Functional part of this snippet. 
-     
-     Create a window of type "palette" (a modeless dialog) and display it.
-    
-     @return True if the snippet ran as expected, false otherwise.
-     @type Boolean
-    */
+
     CropSaverUi.prototype = {
         prepareWindow: function() {
             var that = this;
             
             // Create a window of type dialog.
             this.windowRef = new Window("dialog", this.title);
+            this.windowRef.bounds = this.bounds;
+            
+            this.windowRef.notePanel = this.windowRef.add('panel', undefined, 'Note');
+            this.windowRef.notePanel.noteStatic = this.windowRef.notePanel.add('statictext', undefined, this.docNote);
             
             // Add a frame for the contents.
             this.windowRef.btnPanel = this.windowRef.add("panel", [25, 15, 255, 130], "This is a test");
