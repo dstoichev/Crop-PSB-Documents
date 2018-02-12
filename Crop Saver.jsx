@@ -260,7 +260,7 @@
                                      characters: 60, \
                                      properties: {multiline: true} \
                     }, \
-                    st2: StaticText { text: '', \
+                    st2: StaticText { text: '', alignment: 'left', \
                                      characters: 60, \
                                      properties: {multiline: true} \
                     }, \
@@ -327,7 +327,7 @@
                 //alert(alertText);
                 
                 if (2 != result) {
-                    this.main();
+//                    this.main();
                 }
                 
             } catch (e) {
