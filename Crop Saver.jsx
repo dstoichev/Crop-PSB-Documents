@@ -266,10 +266,15 @@
                     }, \
                 }, \
                 settingsPnl: Panel { orientation: 'column',\
-                    targetFolGroup: Group{orientation: 'row', alignChildren: 'fill', \
+                    outputFolderGroup: Group{orientation: 'row', alignChildren: 'fill', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
                         outputFolder: EditText {characters: 41}, \
-                        processBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} }, \
+                        processBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} } \
+                    }, \
+                    outputTypeGroup: Group{orientation: 'row', alignment: 'left',\
+                        st: StaticText { alignment: ['left', 'center'], text: 'Output format:' }, \
+                        rbJpeg: RadioButton { text: 'JPEG', value: 'true' }, \
+                        rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
