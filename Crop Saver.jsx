@@ -265,6 +265,13 @@
                                      properties: {multiline: true} \
                     }, \
                 }, \
+                settingsPnl: Panel { orientation: 'column',\
+                    targetFolGroup: Group{orientation: 'row', alignChildren: 'fill', \
+                        st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
+                        outputFolder: EditText {characters: 41}, \
+                        processBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} }, \
+                    }, \
+                }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     processBtn: Button { text:'Process', properties:{name:'ok'} }, \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
