@@ -311,9 +311,13 @@
       
             var folder = psx.selectFolder("Select destination folder", def);
             if (folder) {
-                this.windowRef.outputFolderGroup.outputFolder.text = folder.fsName;
+                this.windowRef.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
                 this.opts.outputResultsDestinationPath = folder.fsName;
             }
+        },
+        
+        escapePath: function(path) {
+            return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
         
         prepareWindow: function() {
@@ -338,7 +342,7 @@
                 settingsPnl: Panel { orientation: 'column',\
                     outputFolderGroup: Group{orientation: 'row', alignChildren: 'fill', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
-                        outputFolder: EditText {characters: 41, text: '"+this.opts.outputResultsDestinationPath.path+"'}, \
+                        outputFolder: EditText {characters: 41, text: '"+this.escapePath( this.opts.outputResultsDestinationPath )+"'}, \
                         outputFolderBrowseBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} } \
                     }, \
                     outputTypeGroup: Group{orientation: 'row', alignment: 'left',\
@@ -362,7 +366,9 @@
             this.windowRef.notePnl.st2.text = this.docNote2;
             
             // Register event listeners that define the button behavior
-            this.windowRef.outputFolderGroup.outputFolderBrowseBtn.onClick = this.browseForOutputFolder.call(this);
+            this.windowRef.settingsPnl.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
+                that.browseForOutputFolder.call(that);
+            };
             
             this.windowRef.btnGrp.processBtn.onClick = function() {
                 that.windowRef.close(0);
@@ -385,7 +391,7 @@
         this.cropLayerName = 'CROP';
         
         this.opts = {
-            outputResultsDestinationPath: Folder.myDocuments,
+            outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false
         };
