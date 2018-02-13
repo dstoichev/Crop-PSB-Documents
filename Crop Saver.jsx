@@ -277,7 +277,7 @@
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                     smallSizeGroup: Group{orientation: 'row', alignment: 'left',\
-                        chb: Checkbox { text: ' Do you want small size, too? The longer side will be 1000px.' } \
+                        chb: Checkbox { text: ' Do you want small size images, too? Their longer side will be 1000px.' } \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
