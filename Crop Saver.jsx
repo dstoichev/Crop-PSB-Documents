@@ -222,8 +222,68 @@
     
       return res;
     };
+    
+    
+    //
+    // Function: convertFptr
+    // Description: convert something into a File/Folder object
+    // Input: fptr - a String, XML object, or existing File/Folder object
+    // Return: a File/Folder object
+    //
+    psx.convertFptr = function(fptr) {
+      var f;
+      try { if (fptr instanceof XML) fptr = fptr.toString(); } catch (e) {}
+    
+      if (fptr.constructor == String) {
+        f = File(fptr);
+    
+      } else if (fptr instanceof File || fptr instanceof Folder) {
+        f = fptr;
+    
+      } else {
+        Error.runtimeError(19, "fptr");
+      }
+      return f;
+    };
+
+    //
+    // Function: selectFolder
+    // Description: Open a dialog to select a folder
+    // Input:  prompt - (opt: "Select a Folder")
+    //         start - the initial folder
+    // Return: a Folder object or undefined if the user canceled
+    //
+    psx.selectFolder = function(prompt, start) {
+      var folder;
+    
+      if (!prompt) {
+        prompt = 'Select a folder';
+      }
+    
+      if (start) {
+        start = psx.convertFptr(start);
+        while (start && !start.exists) {
+          start = start.parent;
+        }
+      }
+    
+      if (!start) {
+        folder = Folder.selectDialog(prompt);
+    
+      } else {
+        if (start instanceof File) {
+          start = start.parent;
+        }
+    
+        folder = start.selectDlg(prompt);
+      }
+    
+      return folder;
+    };
+
 
     // EOF EXTRACT from psx.jsx;
+    
     
     
     /**
@@ -246,6 +306,16 @@
     }
 
     CropSaverUi.prototype = {
+        browseForOutputFolder: function() {
+            var def = this.opts.outputResultsDestinationPath || Folder.current;
+      
+            var folder = psx.selectFolder("Select destination folder", def);
+            if (folder) {
+                this.windowRef.outputFolderGroup.outputFolder.text = folder.fsName;
+                this.opts.outputResultsDestinationPath = folder.fsName;
+            }
+        },
+        
         prepareWindow: function() {
             var that = this;
             // Define the resource specification string,
@@ -268,8 +338,8 @@
                 settingsPnl: Panel { orientation: 'column',\
                     outputFolderGroup: Group{orientation: 'row', alignChildren: 'fill', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
-                        outputFolder: EditText {characters: 41}, \
-                        processBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} } \
+                        outputFolder: EditText {characters: 41, text: '"+this.opts.outputResultsDestinationPath.path+"'}, \
+                        outputFolderBrowseBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} } \
                     }, \
                     outputTypeGroup: Group{orientation: 'row', alignment: 'left',\
                         st: StaticText { alignment: ['left', 'center'], text: 'Output format:' }, \
@@ -292,6 +362,8 @@
             this.windowRef.notePnl.st2.text = this.docNote2;
             
             // Register event listeners that define the button behavior
+            this.windowRef.outputFolderGroup.outputFolderBrowseBtn.onClick = this.browseForOutputFolder.call(this);
+            
             this.windowRef.btnGrp.processBtn.onClick = function() {
                 that.windowRef.close(0);
             };
@@ -313,8 +385,8 @@
         this.cropLayerName = 'CROP';
         
         this.opts = {
-            saveResultsDestinationPath: '',
-            resultsImageType: 'JPEG',
+            outputResultsDestinationPath: Folder.myDocuments,
+            outputImageType: 'JPEG',
             wantSmallSize: false
         };
     }
