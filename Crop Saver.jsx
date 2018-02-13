@@ -235,7 +235,7 @@
         this.docNote1 = ''.concat('A series of documents is OPEN in Photoshop. ',
                                   'They are layered documents. SOME of them have a layer called CROP.');
         
-        this.docNote2 = ''.concat('This script saves the images cropped via the CROP layer ',
+        this.docNote2 = ''.concat('This script saves the image cropped via the CROP layer ',
                                   'when this layer exists and the image AS IS when the layer is absent.');
         
         this.opts = opts;
@@ -275,6 +275,9 @@
                         st: StaticText { alignment: ['left', 'center'], text: 'Output format:' }, \
                         rbJpeg: RadioButton { text: 'JPEG', value: 'true' }, \
                         rbTiff: RadioButton { text: 'TIFF' } \
+                    }, \
+                    smallSizeGroup: Group{orientation: 'row', alignment: 'left',\
+                        chb: Checkbox { text: ' Do you want small size, too? The longer side will be 1000px.' } \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
