@@ -478,8 +478,8 @@
             this.initPreferences();
             
             var docs = app.documents,
-                alertText = ''.concat('Processed documents:', "\n"),
-                okTextlineFeed = "\n\n",
+                alertText = ''.concat('Processed documents:', "\n\n"),
+                okTextlineFeed = "\n",
                 mustHideTheLayer = false,
                 mustDisableTheLayerMask = false,
                 doc, cropLayerRef;
