@@ -491,39 +491,39 @@
                 app.activeDocument = doc;
                 
                 try {
+                    // Clean up selection, if any
+                    doc.selection.clear();
+                } catch (e) {}
+                
+                try {
                     cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
+                    
+                    if (false == cropLayerRef.visible) {
+                        cropLayerRef.visible = true;
+                        mustHideTheLayer = true; // after finishing our job with it
+                    }
+                    
+                    if (psx.hasLayerMask(doc, cropLayerRef)) {
+                        if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
+                            psx.enableLayerMask(doc, cropLayerRef);
+                            mustDisableTheLayerMask = true; // after finishing our job with it
+                        }
+                        
+                        this.selectJustTheCrop();
+                    }
+                    else {
+                        // select all
+                        this.selectAll(doc);
+                    }                    
                 } catch(e) {                    
                     if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
-                        // test both
-                        alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer is missing.",  "\n\n"); //"\n", e.message, "\n\n");
-                        continue;
+                        // select all
+                        this.selectAll(doc);
                     }
                     else {
                         throw (e);
                     }
                 }
-                
-                if (false == cropLayerRef.visible) {
-                    cropLayerRef.visible = true;
-                    mustHideTheLayer = true; // after finishing our job with it
-                }
-                
-                if (!psx.hasLayerMask(doc, cropLayerRef)) {
-                    alertText = ''.concat(alertText, doc.name, "\n"," Warning: The 'CROP' layer has no mask.",  "\n\n");
-                    continue;
-                }
-                
-                if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
-                    psx.enableLayerMask(doc, cropLayerRef);
-                    mustDisableTheLayerMask = true; // after finishing our job with it
-                }
-                
-                try {
-                    // Clean up selection, if any
-                    doc.selection.clear();
-                } catch (e) {}
-                
-                this.selectJustTheCrop();
                 
                 var bounds = psx.getSelectionBounds(doc),
                     topLeftX = bounds[0],
@@ -613,6 +613,10 @@
             }
             
             doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+        },
+        
+        selectAll: function(doc) {
+            doc.selection.selectAll();
         },
         
         /**
