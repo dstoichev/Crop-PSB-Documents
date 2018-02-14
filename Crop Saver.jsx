@@ -350,7 +350,7 @@
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                     smallSizeGroup: Group{orientation: 'row', alignment: 'left',\
-                        chb: Checkbox { text: ' Create small size images, too. Their longer side will be 1000px.' } \
+                        chb: Checkbox { text: ' Create small size images, too. Their longer side will be "+this.opts.smallSizeOutputImageLongerSide+"px.' } \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
@@ -406,15 +406,17 @@
 
     
     function CropSaver() {
-        this.savePath = Folder.myDocuments;
-        
         this.cropLayerName = 'CROP';
         
         this.opts = {
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
-            wantSmallSize: false
+            wantSmallSize: false,
+            smallSizeOutputImageLongerSide: 1000
         };
+        
+        this.outputFileExtension = '';
+        this.saveOptions = null;
     }
     
     CropSaver.prototype = {
@@ -435,16 +437,16 @@
                     alertText = ''.concat('Crop Saver Preferences:', "\n"),
                     win = ui.prepareWindow(),
                     result = win.show();
-                
+                /*
                 alertText = alertText.concat('Gettind Preferences Result: ', result, "\n",
                                              'Preferences: ', "\n",
                                              this.opts.outputResultsDestinationPath, "\n",
                                              this.opts.outputImageType, "\n",
                                              this.opts.wantSmallSize, "\n");
                 alert(alertText);
-                
-                if (2 != result) {
-//                    this.main();
+                */
+                if (2 != result) {                    
+                    this.main();
                 }
                 
             } catch (e) {
@@ -454,7 +456,27 @@
             app.preferences.rulerUnits = originalRulerUnits;            
         },
         
+        initPreferences: function() {
+            if ('JPEG' === this.opts.outputImageType) {
+                this.saveOptions = new JPEGSaveOptions();
+                this.saveOptions.quality = 10;
+                this.outputFileExtension = '.jpg';
+            }
+            else {
+                this.saveOptions = new TiffSaveOptions();
+                this.saveOptions.layers = false;
+                this.saveOptions.transparency = true;
+                this.saveOptions.alphaChannels = true;
+                this.saveOptions.embedColorProfile = true;
+                this.saveOptions.imageCompression = TIFFEncoding.TIFFLZW;
+                this.saveOptions.saveImagePyramid = false;
+                this.outputFileExtension = '.tiff';
+            }
+        },
+        
         main: function() {
+            this.initPreferences();
+            
             var docs = app.documents,
                 alertText = ''.concat('Processed documents:', "\n"),
                 okTextlineFeed = "\n\n",
@@ -537,7 +559,7 @@
         /**
          * Save the contents of the clipboard to an image file
          *
-         * @param {Document}
+         * @param {Document} doc
          * @param {Number} tempDocWidthAsNumber
          * @param {Number} tempDocHeightAsNumber
          */
@@ -545,22 +567,49 @@
             var currentActive = app.activeDocument,
                 saveName = doc.name.split('.')[0],
                 tempDocumentName = 'Temp-' + saveName,
-                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + '.jpg'),
-                opts = new JPEGSaveOptions(),
+                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension),
                 tempDocWidth = new UnitValue(tempDocWidthAsNumber, 'px'),
                 tempDocHeight = new UnitValue(tempDocHeightAsNumber, 'px');
                 
-            opts.quality = 10;
-            
             // Add temporary document
             app.documents.add(tempDocWidth, tempDocHeight, 72, tempDocumentName, NewDocumentMode.RGB);
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
-            currentActive.saveAs(file, opts, true, Extension.LOWERCASE);
+            currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+            
+            if (this.opts.wantSmallSize) {
+                this.saveSmall(currentActive, saveName);
+            }
             
             // Close the temporary document
             currentActive.close(SaveOptions.DONOTSAVECHANGES)
+        },
+        
+        /**
+         * Resize so that longer side is this.opts.smallSizeOutputImageLongerSide px
+         *
+         * @param {Document} doc
+         * @param {String} saveName
+         */
+        saveSmall: function(doc, saveName) {
+            var maxSize = this.opts.smallSizeOutputImageLongerSide,
+                width = parseInt(doc.width),
+                height = parseInt(doc.height),
+                outputName = saveName + '_SMALL' + this.outputFileExtension,
+                file = new File(this.opts.outputResultsDestinationPath + '/' + outputName),
+                method, resolution;
+                
+            if (width > height) {
+                method = (maxSize > width) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
+                doc.resizeImage(maxSize, null, resolution, method);
+            }
+            else {
+                method = (maxSize > height) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
+                doc.resizeImage(null, maxSize, resolution, method);
+            }
+            
+            doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
         },
         
         /**
