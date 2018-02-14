@@ -292,11 +292,10 @@
     function CropSaverUi(opts) {
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
-        this.docNote1 = ''.concat('A series of documents is OPEN in Photoshop. ',
-                                  'They are layered documents. SOME of them have a layer called CROP.');
+        this.docNote1 = ''.concat('Process all documents currently OPEN in Photoshop.');
         
-        this.docNote2 = ''.concat('This script saves the image cropped via the CROP layer ',
-                                  'when this layer exists and the image AS IS when the layer is absent.');
+        this.docNote2 = ''.concat('Save an image cropped via the CROP layer ',
+                                  'when this layer exists and an image AS IS when the layer is absent.');
         
         this.opts = opts;
         
@@ -331,7 +330,7 @@
                 notePnl: Panel { \
                     text: 'Note', \
                     st1: StaticText { text: '', \
-                                     characters: 60, \
+                                     characters: 60, alignment: 'left', \
                                      properties: {multiline: true} \
                     }, \
                     st2: StaticText { text: '', alignment: 'left', \
@@ -351,7 +350,7 @@
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                     smallSizeGroup: Group{orientation: 'row', alignment: 'left',\
-                        chb: Checkbox { text: ' Do you want small size images, too? Their longer side will be 1000px.' } \
+                        chb: Checkbox { text: ' Create small size images, too. Their longer side will be 1000px.' } \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
