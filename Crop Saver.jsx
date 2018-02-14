@@ -299,6 +299,8 @@
         
         this.opts = opts;
         
+        this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
+        
         this.title = 'Image Saving Preferences';
         
         this.windowRef = null;
@@ -349,8 +351,13 @@
                         rbJpeg: RadioButton { text: 'JPEG', value: 'true' }, \
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
-                    smallSizeGroup: Group{orientation: 'row', alignment: 'left',\
-                        chb: Checkbox { text: ' Create small size images, too. Their longer side will be "+this.opts.smallSizeOutputImageLongerSide+"px.' } \
+                    smallSizeGroup: Group{orientation: 'column', alignment: 'left',\
+                        chb: Checkbox { text: ' Create small size images, too.', alignment: ['left', 'center'] } \
+                        selectSmallerSizeGroup: Group{orientation: 'row', alignment: 'left', margins: [20, 0, 10, 0] \
+                            st: StaticText { alignment: ['left', 'center'], text: 'Set long side to:' }, \
+                            sizeEt: EditText { characters: 5, text: '"+this.defaultSmallSizeOutputImageLongerSide+"' }, \
+                            stPx: StaticText { alignment: ['left', 'center'], text: ' px' } \
+                        }, \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
@@ -384,10 +391,27 @@
             smallSizeGroup.chb.onClick = function() {
                 if (smallSizeGroup.chb.value) {
                     that.opts.wantSmallSize = true;
+                    smallSizeGroup.selectSmallerSizeGroup.enabled = true;
                 }
                 else {
                     that.opts.wantSmallSize = false;
+                    smallSizeGroup.selectSmallerSizeGroup.enabled = false;
                 }
+            };
+            
+            var selectSmallerSizeGroup = smallSizeGroup.selectSmallerSizeGroup,
+                sizeEditText = selectSmallerSizeGroup.sizeEt;                
+                
+            selectSmallerSizeGroup.enabled = false;
+            
+            sizeEditText.onChange = function() {
+                var size = parseInt(sizeEditText.text);
+                if (isNaN(size) || 0 >= size) {                    
+                    size = that.defaultSmallSizeOutputImageLongerSide;
+                    sizeEditText.text = size;
+                    alert('A size must be a positive integer.');
+                }
+                that.opts.smallSizeOutputImageLongerSide = size;
             };
             
             var buttonGroup = this.windowRef.btnGrp;
