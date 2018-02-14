@@ -588,6 +588,9 @@
         
         /**
          * Resize so that longer side is this.opts.smallSizeOutputImageLongerSide px
+         * The idea for resizing is from xbytor's xtools ResizeImage.resize
+         * Check http://ps-scripts.sourceforge.net/xtools.html
+         * License: http://www.opensource.org/licenses/bsd-license.php
          *
          * @param {Document} doc
          * @param {String} saveName
