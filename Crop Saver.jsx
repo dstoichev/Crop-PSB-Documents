@@ -364,15 +364,37 @@
             this.windowRef.notePnl.st1.text = this.docNote1;
             this.windowRef.notePnl.st2.text = this.docNote2;
             
+            var settings = this.windowRef.settingsPnl;
+            
             // Register event listeners that define the button behavior
-            this.windowRef.settingsPnl.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
+            settings.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
                 that.browseForOutputFolder.call(that);
             };
             
-            this.windowRef.btnGrp.processBtn.onClick = function() {
+            var typeGroup = settings.outputTypeGroup;
+            typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
+                var selected = 'JPEG';
+                if (typeGroup.rbTiff.value) {
+                    selected = 'TIFF';
+                }
+                that.opts.outputImageType = selected;
+            };
+            
+            var smallSizeGroup = settings.smallSizeGroup;
+            smallSizeGroup.chb.onClick = function() {
+                if (smallSizeGroup.chb.value) {
+                    that.opts.wantSmallSize = true;
+                }
+                else {
+                    that.opts.wantSmallSize = false;
+                }
+            };
+            
+            var buttonGroup = this.windowRef.btnGrp;
+            buttonGroup.processBtn.onClick = function() {
                 that.windowRef.close(0);
             };
-            this.windowRef.btnGrp.cancelBtn.onClick = function() {
+            buttonGroup.cancelBtn.onClick = function() {
                 that.windowRef.close(2);
             };
             
@@ -384,7 +406,6 @@
 
     
     function CropSaver() {
-        //this.savePath = '~/PS Dev/Action Target';
         this.savePath = Folder.myDocuments;
         
         this.cropLayerName = 'CROP';
@@ -415,8 +436,12 @@
                     win = ui.prepareWindow(),
                     result = win.show();
                 
-                //alertText = alertText.concat('Gettind Preferences Result: ', result, "\n", 'Preferences: ', JSON.stringify(this.opts));
-                //alert(alertText);
+                alertText = alertText.concat('Gettind Preferences Result: ', result, "\n",
+                                             'Preferences: ', "\n",
+                                             this.opts.outputResultsDestinationPath, "\n",
+                                             this.opts.outputImageType, "\n",
+                                             this.opts.wantSmallSize, "\n");
+                alert(alertText);
                 
                 if (2 != result) {
 //                    this.main();
@@ -520,7 +545,7 @@
             var currentActive = app.activeDocument,
                 saveName = doc.name.split('.')[0],
                 tempDocumentName = 'Temp-' + saveName,
-                file = new File(this.savePath + '/' + saveName + '.jpg'),
+                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + '.jpg'),
                 opts = new JPEGSaveOptions(),
                 tempDocWidth = new UnitValue(tempDocWidthAsNumber, 'px'),
                 tempDocHeight = new UnitValue(tempDocHeightAsNumber, 'px');
