@@ -489,9 +489,9 @@
             else {
                 this.saveOptions = new TiffSaveOptions();
                 this.saveOptions.layers = false;
-                this.saveOptions.transparency = true;
-                this.saveOptions.alphaChannels = true;
-                this.saveOptions.embedColorProfile = true;
+                this.saveOptions.transparency = false;
+                this.saveOptions.alphaChannels = false;
+                this.saveOptions.embedColorProfile = false;
                 this.saveOptions.imageCompression = TIFFEncoding.TIFFLZW;
                 this.saveOptions.saveImagePyramid = false;
                 this.outputFileExtension = '.tiff';
