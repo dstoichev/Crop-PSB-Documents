@@ -510,11 +510,21 @@
                         }
                         
                         this.selectJustTheCrop();
+                        
+                        if (mustDisableTheLayerMask) {
+                            mustDisableTheLayerMask = false;
+                            psx.disableLayerMask(doc, cropLayerRef);
+                        }
                     }
                     else {
                         // select all
                         this.selectAll(doc);
-                    }                    
+                    }
+                    
+                    if (mustHideTheLayer) {
+                        cropLayerRef.visible = false;
+                        mustHideTheLayer = false;
+                    }
                 } catch(e) {                    
                     if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
                         // select all
@@ -537,16 +547,6 @@
                 
                 doc.selection.deselect();
                 
-                if (mustDisableTheLayerMask) {
-                    mustDisableTheLayerMask = false;
-                    psx.disableLayerMask(doc, cropLayerRef);
-                }
-                
-                if (mustHideTheLayer) {
-                    cropLayerRef.visible = false;
-                    mustHideTheLayer = false;
-                }
-                
                 okTextlineFeed = (docs.length - 1 != i) ? okTextlineFeed : "\n";
           
                 alertText = ''.concat(alertText, doc.name, ' - OK.', okTextlineFeed);
@@ -567,12 +567,10 @@
             var currentActive = app.activeDocument,
                 saveName = doc.name.split('.')[0],
                 tempDocumentName = 'Temp-' + saveName,
-                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension),
-                tempDocWidth = new UnitValue(tempDocWidthAsNumber, 'px'),
-                tempDocHeight = new UnitValue(tempDocHeightAsNumber, 'px');
+                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension);
                 
             // Add temporary document
-            app.documents.add(tempDocWidth, tempDocHeight, 72, tempDocumentName, NewDocumentMode.RGB);
+            app.documents.add(tempDocWidthAsNumber, tempDocHeightAsNumber, 72, tempDocumentName, NewDocumentMode.RGB);
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
