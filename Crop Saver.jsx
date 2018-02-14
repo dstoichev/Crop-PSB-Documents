@@ -621,19 +621,20 @@
             var maxSize = this.opts.smallSizeOutputImageLongerSide,
                 width = parseInt(doc.width),
                 height = parseInt(doc.height),
-                outputName = saveName + '_SMALL' + this.outputFileExtension,
-                file = new File(this.opts.outputResultsDestinationPath + '/' + outputName),
-                method, resolution;
+                outputName, file, method, resolution;
                 
             if (width > height) {
+                outputName = ''.concat(saveName, '_width_', maxSize, 'px', this.outputFileExtension);
                 method = (maxSize > width) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(maxSize, null, resolution, method);
             }
             else {
+                outputName = ''.concat(saveName, '_height_', maxSize, 'px', this.outputFileExtension);
                 method = (maxSize > height) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(null, maxSize, resolution, method);
             }
             
+            file = new File(this.opts.outputResultsDestinationPath + '/' + outputName);
             doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
         },
         
