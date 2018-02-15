@@ -1,6 +1,6 @@
 #target photoshop
 
-#include "./include/json2.js"
+//#include "./include/json2.js"
 
 (function() {
     //
