@@ -4,10 +4,6 @@
 
 (function() {
     //
-    //@show include
-    //
-    //
-    //
     // psx.jsx
     //   This file contains a collection code extracted from other parts
     //   of xtools for use in production scripts written for Adobe.
@@ -17,7 +13,7 @@
     // Author: xbytor@gmail.com
     // License: http://www.opensource.org/licenses/bsd-license.php
     //
-    //@show include
+    
     //    
     // !!! Only an EXTRACT from psx.jsx !!!
     // http://ps-scripts.sourceforge.net/xtools.html
@@ -284,7 +280,73 @@
 
     // EOF EXTRACT from psx.jsx;
     
+    //
+    // stdlib.js
+    //   This file contains a collection of utility routines that I've
+    //   written, borrowed, rewritten, and occasionally tested and
+    //   documented.
+    //
+    //   Most of this stuff is photoshop specific. I'll break out the parts
+    //   that aren't sometime in the future.
+    //
+    // $Id: stdlib.js,v 1.368 2015/11/18 00:51:32 anonymous Exp $
+    // Copyright: (c)2015, xbytor
+    // License: http://www.opensource.org/licenses/bsd-license.php
+    // Contact: xbytor@gmail.com
+    //
+        
+    //    
+    // !!! Only an EXTRACT from stdlib.js !!!
+    // http://ps-scripts.sourceforge.net/xtools.html
+    //
     
+    //
+    //=============================== Stdlib =====================================
+    // This is the name space for utility functions. This should probably be
+    // broken up into smaller classes
+    
+    Stdlib = function() {};
+    
+    Stdlib.hist = function(dir) {
+        function _ftn() {
+          var desc = new ActionDescriptor();
+          var ref = new ActionReference();
+          ref.putEnumerated(cTID("HstS"), cTID("Ordn"), cTID(dir));
+          desc.putReference(cTID("null"), ref);
+          executeAction(cTID("slct"), desc, DialogModes.NO);
+        }
+      
+        _ftn();
+    };    
+    
+    Stdlib.undo = function () {
+        Stdlib.hist("Prvs");
+    };    
+    
+    Stdlib.redo = function () {
+        Stdlib.hist("Nxt ");
+    };
+            
+    // Makes separate suspendHistory entries undoable (^Z)
+    Stdlib.suspendHistory = function (doc, name, ftn ) {
+        /*
+         suspendHistory(historyString, javaScriptString)
+         
+        Provides a single entry in history states for the entire script provided by javaScriptString .
+        Allows a single undo for all actions taken in the script.
+        The historyString parameter provides the string to use for the history state.
+        The javaScriptString parameter provides a string of JavaScript code to
+        excute while history is suspended.
+        */
+        doc.suspendHistory(name, ftn);
+        app.activeDocument = app.activeDocument; // NOP
+    };
+      
+    Stdlib.NOP = function() {
+        try { app.activeDocument = app.activeDocument; } catch (e) { }
+    };
+
+    // EOF EXTRACT from stdlib.js
     
     /**
      * @param{Object} opts - passed by reference
@@ -430,6 +492,8 @@
 
     
     function CropSaver() {
+        this.alertText = ''.concat('Processed documents:', "\n\n");
+                
         this.cropLayerName = 'CROP';
         
         this.opts = {
@@ -438,6 +502,8 @@
             wantSmallSize: false,
             smallSizeOutputImageLongerSide: 1000
         };
+        
+        this.okTextlineFeed = "\n";
         
         this.outputFileExtension = '';
         this.saveOptions = null;
@@ -458,7 +524,7 @@
                         
             try {
                 var ui = new CropSaverUi(this.opts),
-                    alertText = ''.concat('Crop Saver Preferences:', "\n"),
+                    //alertText = ''.concat('Crop Saver Preferences:', "\n"),
                     win = ui.prepareWindow(),
                     result = win.show();
                 /*
@@ -501,83 +567,89 @@
         main: function() {
             this.initPreferences();
             
-            var docs = app.documents,
-                alertText = ''.concat('Processed documents:', "\n\n"),
-                okTextlineFeed = "\n",
-                mustHideTheLayer = false,
-                mustDisableTheLayerMask = false,
-                doc, cropLayerRef;
-                
-            for (var i = 0; i < docs.length; i++)
-            {
-                doc = docs[i];
-                
-                app.activeDocument = doc;
-                
-                try {
-                    // Clean up selection, if any
-                    doc.selection.clear();
-                } catch (e) {}
-                
-                try {
-                    cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
-                    
-                    if (false == cropLayerRef.visible) {
-                        cropLayerRef.visible = true;
-                        mustHideTheLayer = true; // after finishing our job with it
-                    }
-                    
-                    if (psx.hasLayerMask(doc, cropLayerRef)) {
-                        if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
-                            psx.enableLayerMask(doc, cropLayerRef);
-                            mustDisableTheLayerMask = true; // after finishing our job with it
-                        }
-                        
-                        this.selectJustTheCrop();
-                        
-                        if (mustDisableTheLayerMask) {
-                            mustDisableTheLayerMask = false;
-                            psx.disableLayerMask(doc, cropLayerRef);
-                        }
-                    }
-                    else {
-                        // select all
-                        this.selectAll(doc);
-                    }
-                    
-                    if (mustHideTheLayer) {
-                        cropLayerRef.visible = false;
-                        mustHideTheLayer = false;
-                    }
-                } catch(e) {                    
-                    if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
-                        // select all
-                        this.selectAll(doc);
-                    }
-                    else {
-                        throw (e);
-                    }
+            var that = this,
+                docs = app.documents,
+                doc;            
+            try {    
+                for (var i = 0; i < docs.length; i++)
+                {
+                    doc = docs[i];
+                    app.activeDocument = doc;
+                    Stdlib.suspendHistory(doc, 'Crop Saver', 'that.processDocument();');
                 }
-                
-                var bounds = psx.getSelectionBounds(doc),
-                    topLeftX = bounds[0],
-                    topLeftY = bounds[1],
-                    bottomRightX = bounds[2],
-                    bottomRightY = bounds[3],
-                    selectionWidth = bottomRightX - topLeftX,
-                    selectionHeight = bottomRightY - topLeftY; 
-                    
-                this.copyMerged();
-                
-                doc.selection.deselect();
-                
-                okTextlineFeed = (docs.length - 1 != i) ? okTextlineFeed : "\n";
-          
-                alertText = ''.concat(alertText, doc.name, ' - OK.', okTextlineFeed);
-                this.saveResult(doc, selectionWidth, selectionHeight);
+            } catch (e) {
+                Stdlib.undo();
+                alert(e);
             }
             
-            alert(alertText);
+            alert(this.alertText);
+        },
+        
+        processDocument: function() {
+            var doc = app.activeDocument,
+                mustHideTheLayer = false,
+                mustDisableTheLayerMask = false,
+                cropLayerRef;
+                
+            try {
+                // Clean up selection, if any
+                doc.selection.clear();
+            } catch (e) {}
+            
+            try {
+                cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
+                
+                if (false == cropLayerRef.visible) {
+                    cropLayerRef.visible = true;
+                    mustHideTheLayer = true; // after finishing our job with it
+                }
+                
+                if (psx.hasLayerMask(doc, cropLayerRef)) {
+                    if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
+                        psx.enableLayerMask(doc, cropLayerRef);
+                        mustDisableTheLayerMask = true; // after finishing our job with it
+                    }
+                    
+                    this.selectJustTheCrop();
+                    
+                    if (mustDisableTheLayerMask) {
+                        mustDisableTheLayerMask = false;
+                        psx.disableLayerMask(doc, cropLayerRef);
+                    }
+                }
+                else {
+                    // select all
+                    this.selectAll(doc);
+                }
+                
+                if (mustHideTheLayer) {
+                    cropLayerRef.visible = false;
+                    mustHideTheLayer = false;
+                }
+            } catch(e) {                    
+                if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
+                    // select all
+                    this.selectAll(doc);
+                }
+                else {
+                    throw (e);
+                }
+            }
+            
+            var bounds = psx.getSelectionBounds(doc),
+                topLeftX = bounds[0],
+                topLeftY = bounds[1],
+                bottomRightX = bounds[2],
+                bottomRightY = bounds[3],
+                selectionWidth = bottomRightX - topLeftX,
+                selectionHeight = bottomRightY - topLeftY; 
+                
+            this.copyMerged();
+            
+            this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
+            this.saveResult(doc, selectionWidth, selectionHeight);
+            
+            Stdlib.undo();
         },
         
         /**
@@ -710,19 +782,11 @@
         }
     };
     
-    var cs = new CropSaver();
+    
     
     if (documents.length) {
-        /*
-         suspendHistory(historyString, CropSavertring)
-         
-        Provides a single entry in history states for the entire script provided by CropSavertring .
-        Allows a single undo for all actions taken in the script.
-        The historyString parameter provides the string to use for the history state.
-        The CropSavertring parameter provides a string of JavaScript code to
-        excute while history is suspended.
-        */
-        app.activeDocument.suspendHistory("Crop Saver", "cs.init()");        
+        var cs = new CropSaver();
+        cs.init();
     }
     else {
         alert("Open one or more documents before running this script.");
