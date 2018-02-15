@@ -306,47 +306,187 @@
     // broken up into smaller classes
     
     Stdlib = function() {};
+        
+    //
+    // Return an item called 'name' from the specified container.
+    // This works for the "magic" on PS containers like Documents.getByName(),
+    // for instance. However this returns null if an index is not found instead
+    // of throwing an exception.
+    //
+    // The 'name' argument can also be a regular expression.
+    // If 'all' is set to true, it will return all matches
+    //
+    Stdlib.getByName = function(container, name, all) {
+      // check for a bad index
+      if (!name) {
+        Error.runtimeError(2, "name"); // "'undefined' is an invalid name/index");
+      }
     
-    Stdlib.hist = function(dir) {
-        function _ftn() {
-          var desc = new ActionDescriptor();
-          var ref = new ActionReference();
-          ref.putEnumerated(cTID("HstS"), cTID("Ordn"), cTID(dir));
-          desc.putReference(cTID("null"), ref);
-          executeAction(cTID("slct"), desc, DialogModes.NO);
+      var matchFtn;
+    
+      if (name instanceof RegExp) {
+        matchFtn = function(s1, re) { return s1.match(re) != null; };
+      } else {
+        matchFtn = function(s1, s2) { return s1 == s2;  };
+      }
+    
+      var obj = [];
+    
+      for (var i = 0; i < container.length; i++) {
+        if (matchFtn(container[i].name, name)) {
+          if (!all) {
+            return container[i];     // there can be only one!
+          }
+          obj.push(container[i]);    // add it to the list
         }
-      
-        _ftn();
-    };    
+      }
     
-    Stdlib.undo = function () {
-        Stdlib.hist("Prvs");
-    };    
+      return all ? obj : undefined;
+    };
+
+    //
+    // via SzopeN
+    // These two vars are used by wrapLC/Layer and control whether or not
+    // the existing doc/layer should be restored after the call is complete
+    // If these are set fo false, the specified doc/layer will remain
+    // the active doc/layer
+    //
+    Stdlib._restoreDoc = true;
+    Stdlib._restoreLayer = true;
     
-    Stdlib.redo = function () {
-        Stdlib.hist("Nxt ");
+    //
+    // ScriptingListener code operates on the "active" document.
+    // There are times, however, when that is _not_ what I want.
+    // This wrapper will make the specified document the active
+    // document for the duration of the ScriptingListener code and
+    // swaps in the previous active document as needed
+    //
+    Stdlib.wrapLC = function(doc, ftn) {
+      var ad = app.activeDocument;
+      if (doc) {
+        if (ad != doc) {
+          app.activeDocument = doc;
+        }
+      } else {
+        doc = ad;
+      }
+    
+      var res = undefined;
+      try {
+        res = ftn(doc);
+    
+      } finally {
+        if (Stdlib._restoreDoc) {
+          if (ad && app.activeDocument != ad) {
+            app.activeDocument = ad;
+          }
+        }
+      }
+    
+      return res;
     };
-            
-    // Makes separate suspendHistory entries undoable (^Z)
-    Stdlib.suspendHistory = function (doc, name, ftn ) {
-        /*
-         suspendHistory(historyString, javaScriptString)
-         
-        Provides a single entry in history states for the entire script provided by javaScriptString .
-        Allows a single undo for all actions taken in the script.
-        The historyString parameter provides the string to use for the history state.
-        The javaScriptString parameter provides a string of JavaScript code to
-        excute while history is suspended.
-        */
-        doc.suspendHistory(name, ftn);
-        app.activeDocument = app.activeDocument; // NOP
+
+    //============================= History  ===============================
+    //
+    // Thanks to Andrew Hall for the idea
+    // Added named snapshot support
+    //
+    Stdlib.takeSnapshot = function(doc, sname) {
+      function _ftn() {
+        var desc = new ActionDescriptor();  // Make
+    
+        var sref = new ActionReference();   // Snapshot
+        sref.putClass(cTID("SnpS"));
+        desc.putReference(cTID("null"), sref);
+    
+        var fref = new ActionReference();    // Current History State
+        fref.putProperty(cTID("HstS"), cTID("CrnH"));
+        desc.putReference(cTID("From"), fref );
+    
+        if (sname) {                         // Named snapshot
+          desc.putString(cTID("Nm  "), sname);
+        }
+    
+        desc.putEnumerated(cTID("Usng"), cTID("HstS"), cTID("FllD"));
+        executeAction(cTID("Mk  "), desc, DialogModes.NO );
+      }
+    
+      Stdlib.wrapLC(doc, _ftn);
     };
-      
-    Stdlib.NOP = function() {
-        try { app.activeDocument = app.activeDocument; } catch (e) { }
+    
+    //
+    // Revert to named snapshot
+    //
+    Stdlib.revertToSnapshot = function(doc, sname) {
+      function _ftn() {
+        if (!sname) {
+          return Stdlib.revertToLastSnapshot(doc);
+        }
+        var state = Stdlib.getByName(doc.historyStates, sname);
+        if (state) {
+          doc.activeHistoryState = state;
+          return true;
+        }
+        return false;
+      }
+      return Stdlib.wrapLC(doc, _ftn);
+    };
+    
+    //
+    // Revert to the last auto-named snapshot
+    //
+    Stdlib.revertToLastSnapshot = function(doc) {
+      function _ftn() {
+        var states = Stdlib.getByName(doc.historyStates, /^Snapshot /, true);
+        if (states.length > 0) {
+          doc.activeHistoryState = states.pop();
+          return true;
+        }
+        return false;
+      }
+      return Stdlib.wrapLC(doc, _ftn);
+    };
+    
+    Stdlib.deleteSnapshot = function(doc, name) {
+      function _ftn() {
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putName(cTID('SnpS'), name);
+        desc.putReference(cTID('null'), ref);
+        executeAction(cTID('Dlt '), desc, DialogModes.NO );
+      }
+      return Stdlib.wrapLC(doc, _ftn);
+    
+    //   function _deleteCurrent() {
+    //     var ref = new ActionReference();
+    //     ref.putProperty(cTID("HstS"), cTID("CrnH"));
+    
+    //     var desc = new ActionDescriptor();
+    //     desc.putReference(cTID("null"), ref );
+    //     executeAction(cTID("Dlt "), desc, DialogModes.NO );
+    //   };
+    
+    //   var state = doc.activeHistoryState;
+    //   if (!Stdlib.revertToSnapshot(doc, name)) {
+    //     return false;
+    //   }
+    //   try {
+    //     _deleteCurrent(doc, name);
+    //   } finally {
+    //     var level = $.level;
+    //     try {
+    //       $.level = 0;
+    //       doc.activeHistoryState = state;
+    //     } catch (e) {
+    //     }
+    //     $.level = level;
+    //   }
+    //   return true;
     };
 
     // EOF EXTRACT from stdlib.js
+
+
     
     /**
      * @param{Object} opts - passed by reference
@@ -567,29 +707,33 @@
         main: function() {
             this.initPreferences();
             
-            var that = this,
-                docs = app.documents,
+            var docs = app.documents,
+                snapshotName ='BeforeCropSaver',
                 doc;            
             try {    
                 for (var i = 0; i < docs.length; i++)
                 {
-                    doc = docs[i];
-                    app.activeDocument = doc;
-                    Stdlib.suspendHistory(doc, 'Crop Saver', 'that.processDocument();');
+                    doc = docs[i];                    
+                    Stdlib.takeSnapshot(doc, snapshotName);                    
+                    this.processDocument(doc);
+                    Stdlib.revertToSnapshot(doc, snapshotName);
+                    //Stdlib.deleteSnapshot(doc, snapshotName);
                 }
             } catch (e) {
-                Stdlib.undo();
+                Stdlib.revertToSnapshot(doc, snapshotName);
+                //Stdlib.deleteSnapshot(doc, snapshotName);
                 alert(e);
             }
             
             alert(this.alertText);
         },
         
-        processDocument: function() {
-            var doc = app.activeDocument,
-                mustHideTheLayer = false,
+        processDocument: function(doc) {
+            var mustHideTheLayer = false,
                 mustDisableTheLayerMask = false,
                 cropLayerRef;
+                
+            app.activeDocument = doc;
                 
             try {
                 // Clean up selection, if any
@@ -648,8 +792,6 @@
             
             this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
             this.saveResult(doc, selectionWidth, selectionHeight);
-            
-            Stdlib.undo();
         },
         
         /**
@@ -660,10 +802,10 @@
          * @param {Number} tempDocHeightAsNumber
          */
         saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
-            var currentActive = app.activeDocument,
-                saveName = doc.name.split('.')[0],
+            var saveName = doc.name.split('.')[0],
                 tempDocumentName = 'Temp-' + saveName,
-                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension);
+                file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension),
+                currentActive;
                 
             // Add temporary document
             app.documents.add(tempDocWidthAsNumber, tempDocHeightAsNumber, 72, tempDocumentName, NewDocumentMode.RGB);
@@ -677,7 +819,7 @@
             }
             
             // Close the temporary document
-            currentActive.close(SaveOptions.DONOTSAVECHANGES)
+            currentActive.close(SaveOptions.DONOTSAVECHANGES);
         },
         
         /**
