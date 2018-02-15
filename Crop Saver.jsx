@@ -585,7 +585,7 @@
                     }, \
                 }, \
                 settingsPnl: Panel { orientation: 'column',\
-                    outputFolderGroup: Group{orientation: 'row', alignChildren: 'fill', \
+                    outputFolderGroup: Group{orientation: 'row', alignment: 'left', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
                         outputFolder: EditText {characters: 41, text: '"+this.escapePath( this.opts.outputResultsDestinationPath )+"'}, \
                         outputFolderBrowseBtn: Button { text:'...', size: [25, 20], properties:{name:'selectFolder'} } \
