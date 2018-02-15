@@ -276,6 +276,48 @@
     
       return folder;
     };
+    
+    
+    
+    //
+    // Format a Date object into a proper ISO 8601 date string
+    //
+    psx.toISODateString = function(date, timeDesignator, dateOnly, precision) {
+      if (!date) date = new Date();
+      var str = '';
+      if (timeDesignator == undefined) { timeDesignator = 'T'; };
+      function _zeroPad(val) { return (val < 10) ? '0' + val : val; }
+      if (date instanceof Date) {
+        str = (date.getFullYear() + '-' +
+               _zeroPad(date.getMonth()+1,2) + '-' +
+               _zeroPad(date.getDate(),2));
+        if (!dateOnly) {
+          str += (timeDesignator +
+                  _zeroPad(date.getHours(),2) + ':' +
+                  _zeroPad(date.getMinutes(),2) + ':' +
+                  _zeroPad(date.getSeconds(),2));
+          if (precision && typeof(precision) == "number") {
+            var ms = date.getMilliseconds();
+            if (ms) {
+              var millis = _zeroPad(ms.toString(),precision);
+              var s = millis.slice(0, Math.min(precision, millis.length));
+              str += "." + s;
+            }
+          }
+        }
+      }
+      return str;
+    };
+    
+    //
+    // Make it a Date object method
+    //
+    Date.prototype.toISODateString = function(timeDesignator, dateOnly, precision) {
+      return psx.toISODateString(this, timeDesignator, dateOnly, precision);
+    };
+    
+    Date.prototype.toISOString = Date.prototype.toISODateString;
+
 
 
     // EOF EXTRACT from psx.jsx;
@@ -708,18 +750,19 @@
             this.initPreferences();
             
             var docs = app.documents,
-                currentActive = app.activeDocument,
-                snapshotName ='BeforeCropSaver',
-                doc;            
+                currentActive = app.activeDocument,                
+                snapshotNameBase ='BeforeCropSaver: ',
+                doc, start, snapshotName;            
             
             try {    
                 for (var i = 0; i < docs.length; i++)
                 {
-                    doc = docs[i];                    
-                    Stdlib.takeSnapshot(doc, snapshotName);                    
+                    doc = docs[i];
+                    start = new Date();
+                    snapshotName = snapshotNameBase + start.toISOString('T', false, 3);
                     
+                    Stdlib.takeSnapshot(doc, snapshotName);
                     this.processDocument(doc);
-                    
                     Stdlib.revertToSnapshot(doc, snapshotName);
                 }
             } catch (e) {
