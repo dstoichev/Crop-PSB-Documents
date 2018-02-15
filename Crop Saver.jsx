@@ -708,22 +708,26 @@
             this.initPreferences();
             
             var docs = app.documents,
+                currentActive = app.activeDocument,
                 snapshotName ='BeforeCropSaver',
                 doc;            
+            
             try {    
                 for (var i = 0; i < docs.length; i++)
                 {
                     doc = docs[i];                    
                     Stdlib.takeSnapshot(doc, snapshotName);                    
+                    
                     this.processDocument(doc);
+                    
                     Stdlib.revertToSnapshot(doc, snapshotName);
-                    //Stdlib.deleteSnapshot(doc, snapshotName);
                 }
             } catch (e) {
-                Stdlib.revertToSnapshot(doc, snapshotName);
-                //Stdlib.deleteSnapshot(doc, snapshotName);
+                Stdlib.revertToSnapshot(doc, snapshotName);                
                 alert(e);
             }
+            
+            app.activeDocument = currentActive;
             
             alert(this.alertText);
         },
