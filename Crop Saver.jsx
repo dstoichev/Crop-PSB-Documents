@@ -463,8 +463,8 @@
       function _ftn() {
         if (!sname) {
           return Stdlib.revertToLastSnapshot(doc);
-        }
-        var state = Stdlib.getByName(doc.historyStates, sname);
+        }        
+        var state = Stdlib.getByName(doc.historyStates, sname);        
         if (state) {
           doc.activeHistoryState = state;
           return true;
@@ -766,7 +766,8 @@
                     Stdlib.revertToSnapshot(doc, snapshotName);
                 }
             } catch (e) {
-                Stdlib.revertToSnapshot(doc, snapshotName);                
+                app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
+                Stdlib.revertToSnapshot(doc, snapshotName);
                 alert(e);
             }
             
@@ -867,6 +868,8 @@
             
             // Close the temporary document
             currentActive.close(SaveOptions.DONOTSAVECHANGES);
+            
+            app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
         },
         
         /**
