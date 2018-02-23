@@ -785,7 +785,7 @@
                 
             try {
                 // Clean up selection, if any
-                doc.selection.clear();
+                doc.selection.deselect();
             } catch (e) {}
             
             try {
