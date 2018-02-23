@@ -571,16 +571,14 @@
             // which specifies all of the components for the 
             // Image Saving Preferences dialog.
             var resource =
-            "dialog { orientation:'column', alignChildren: 'fill', \
+            "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { \
+                notePnl: Panel { orientation:'column', alignment: 'fill', \
                     text: 'Note', \
-                    st1: StaticText { text: '', \
-                                     characters: 60, alignment: 'left', \
+                    st1: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
-                    st2: StaticText { text: '', alignment: 'left', \
-                                     characters: 60, \
+                    st2: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
                 }, \
