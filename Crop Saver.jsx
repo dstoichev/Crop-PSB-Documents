@@ -19,48 +19,77 @@
     // http://ps-scripts.sourceforge.net/xtools.html
     //
     
-    cTID = function(s) { return cTID[s] || (cTID[s] = app.charIDToTypeID(s)); };
-    sTID = function(s) { return sTID[s] || (sTID[s] = app.stringIDToTypeID(s)); };
+    cTID = function(s) { return app.charIDToTypeID(s); };
+    sTID = function(s) { return app.stringIDToTypeID(s); };
     
     // return an ID for whatever s might be
     xTID = function(s) {
-      if (s.constructor == Number) {
-        return s;
-      }
-      try {
-        if (s instanceof XML) {
-          var k = s.nodeKind();
-          if (k == 'text' || k == 'attribute') {
-            s = s.toString();
+        if (s == undefined) {
+          if (!isCS() && !isCS2()) {
+            try {
+              Stdlib.log("undefined id detected at: " + $.stack);
+            } catch (e) {
+              Stdlib.log("undefined id detected");
+            }
+          } else {
+            Stdlib.log("undefined id detected");
           }
         }
-      } catch (e) {
-      }
-    
-      if (s.constructor == String) {
-        if (s.length > 0) {
-          if (s.length != 4) return sTID(s);
-          try { return cTID(s); } catch (e) { return sTID(s); }
+      
+        if (s.constructor == Number) {
+          return s;
         }
-      }
-      Error.runtimeError(19, s);  // Bad Argument
-    
-      return undefined;
+        try {
+          if (s instanceof XML) {
+            var k = s.nodeKind();
+            if (k == 'text' || k == 'attribute') {
+              s = s.toString();
+            }
+          }
+        } catch (e) {
+        }
+      
+        if (s.constructor == String) {
+          if (s.length > 0) {
+            if (s.length != 4) return sTID(s);
+            try { return cTID(s); } catch (e) { return sTID(s); }
+          }
+        }
+        Error.runtimeError(19, s);  // Bad Argument
+      
+        return undefined;
     };
     
     //
-    // Convert a 32 bit ID back to either a 4 character representation or the
-    // mapped string representation.
+    // This reverses the mapping from a TypeID to something readable.
+    // If PSConstants.js has been included, the string returned is even
+    // more readable
+    // 'map' is optional. It can be either a string ("Class") or a
+    // table object from PSConstants (PSClass). Using 'map' will help
+    // id2char return the most appropriate result since collisions
+    // happen. For instance, cTID('Rds ') is the id for PSKey.Radius
+    // and PSEnum.Reds.
     //
-    id2char = function(s) {
+    // D.S. Note: Used when debugging; Ensure PSConstants.js is included before uncommenting their rows below
+    //
+    id2char = function(s, map) {
       if (isNaN(Number(s))){
         return '';
       }
       var v;
     
+      // Use every mechanism available to map the typeID
       var lvl = $.level;
       $.level = 0;
       try {
+        /*
+        if (!v) {
+          try { v = PSConstants.reverseNameLookup(s, map); } catch (e) {}
+        }
+        if (!v) {
+          try { v = PSConstants.reverseSymLookup(s); } catch (e) {}
+        }
+        */
         if (!v) {
           try { v = app.typeIDToCharID(s); } catch (e) {}
         }
@@ -70,13 +99,9 @@
       } catch (e) {
       }
       $.level = lvl;
-    
       if (!v) {
-        // neither of the builtin PS functions know about this ID so we
-        // force the matter
-        v = psx.numberToAscii(s);
+        v = Stdlib.numberToAscii(s);
       }
-    
       return v ? v : s;
     };
     
@@ -115,211 +140,6 @@
     isCS     = function()  { return CSVersion._version == 1; };
 
 
-    //
-    // psx works as a namespace for commonly used functions
-    //
-    psx = function() {};
-
-    //
-    // Function: getLayerDescriptor
-    // Description: Gets the ActionDescriptor for a layer
-    // Input:  doc   - a Document
-    //         layer - a Layer
-    // Return: an ActionDescriptor
-    //
-    psx.getLayerDescriptor = function(doc, layer) {
-      var ref = new ActionReference();
-      ref.putEnumerated(cTID("Lyr "), cTID("Ordn"), cTID("Trgt"));
-      return executeActionGet(ref);
-    };
-    
-    //
-    // Function: hasLayerMask
-    //           isLayerMaskEnabled
-    //           disableLayerMask
-    //           enableLayerMask
-    //           setLayerMaskEnabledState
-    // Description: A collection of functions dealing with the state
-    //              of a layer's mask.
-    //              
-    // Input:  doc   - a Document
-    //         layer - a Layer
-    // Return: boolean or <none>
-    //
-    psx.hasLayerMask = function(doc, layer) {
-        var d = psx.getLayerDescriptor(doc, layer);
-        /*
-        var keys = ''.concat('Layer ', d.getString(cTID('Nm  ')), "\n");
-        
-        for (var i = 0; i < d.count; i++)
-        {
-            keys = keys.concat(id2char(d.getKey(i) ), "\n");
-        }
-        alert(keys);
-        */
-      return d.hasKey(cTID("UsrM"));
-    };
-    psx.isLayerMaskEnabled = function(doc, layer) {
-      var desc = psx.getLayerDescriptor(doc, layer);
-      return (desc.hasKey(cTID("UsrM")) && desc.getBoolean(cTID("UsrM")));
-    };
-    psx.disableLayerMask = function(doc, layer) {
-      psx.setLayerMaskEnabledState(doc, layer, false);
-    };
-    psx.enableLayerMask = function(doc, layer) {
-      psx.setLayerMaskEnabledState(doc, layer, true);
-    };
-    psx.setLayerMaskEnabledState = function(doc, layer, state) {
-      if (state == undefined) {
-        state = false;
-      }
-      var desc = new ActionDescriptor();
-    
-      var ref = new ActionReference();
-      ref.putEnumerated(cTID('Lyr '), cTID('Ordn'), cTID('Trgt'));
-      desc.putReference(cTID('null'), ref );
-    
-      var tdesc = new ActionDescriptor();
-      tdesc.putBoolean(cTID('UsrM'), state);
-      desc.putObject(cTID('T   '), cTID('Lyr '), tdesc);
-    
-      executeAction(cTID('setd'), desc, DialogModes.NO );
-    };
-    
-    //
-    // Function: getSelectionBounds
-    // Description: Get the bounds of the current selection
-    // Input:  doc  - a Document
-    // Return: a bound rectangle (in pixels)
-    //
-    psx.getSelectionBounds = function(doc) {
-      var bnds = [];
-      var sbnds = doc.selection.bounds;
-      for (var i = 0; i < sbnds.length; i++) {
-        bnds[i] = sbnds[i].as("px");
-      }
-      return bnds;
-    };
-    
-    //
-    // Function: hasSelection
-    // Input:  doc  - a Document
-    // Return: returns true if the document has as selection, false if not
-    //
-    psx.hasSelection = function(doc) {
-      var res = false;
-    
-      var as = doc.activeHistoryState;
-      doc.selection.deselect();
-      if (as != doc.activeHistoryState) {
-        res = true;
-        doc.activeHistoryState = as;
-      }
-    
-      return res;
-    };
-    
-    
-    //
-    // Function: convertFptr
-    // Description: convert something into a File/Folder object
-    // Input: fptr - a String, XML object, or existing File/Folder object
-    // Return: a File/Folder object
-    //
-    psx.convertFptr = function(fptr) {
-      var f;
-      try { if (fptr instanceof XML) fptr = fptr.toString(); } catch (e) {}
-    
-      if (fptr.constructor == String) {
-        f = File(fptr);
-    
-      } else if (fptr instanceof File || fptr instanceof Folder) {
-        f = fptr;
-    
-      } else {
-        Error.runtimeError(19, "fptr");
-      }
-      return f;
-    };
-
-    //
-    // Function: selectFolder
-    // Description: Open a dialog to select a folder
-    // Input:  prompt - (opt: "Select a Folder")
-    //         start - the initial folder
-    // Return: a Folder object or undefined if the user canceled
-    //
-    psx.selectFolder = function(prompt, start) {
-      var folder;
-    
-      if (!prompt) {
-        prompt = 'Select a folder';
-      }
-    
-      if (start) {
-        start = psx.convertFptr(start);
-        while (start && !start.exists) {
-          start = start.parent;
-        }
-      }
-    
-      if (!start) {
-        folder = Folder.selectDialog(prompt);
-    
-      } else {
-        if (start instanceof File) {
-          start = start.parent;
-        }
-    
-        folder = start.selectDlg(prompt);
-      }
-    
-      return folder;
-    };
-    
-    
-    
-    //
-    // Format a Date object into a proper ISO 8601 date string
-    //
-    psx.toISODateString = function(date, timeDesignator, dateOnly, precision) {
-      if (!date) date = new Date();
-      var str = '';
-      if (timeDesignator == undefined) { timeDesignator = 'T'; };
-      function _zeroPad(val) { return (val < 10) ? '0' + val : val; }
-      if (date instanceof Date) {
-        str = (date.getFullYear() + '-' +
-               _zeroPad(date.getMonth()+1,2) + '-' +
-               _zeroPad(date.getDate(),2));
-        if (!dateOnly) {
-          str += (timeDesignator +
-                  _zeroPad(date.getHours(),2) + ':' +
-                  _zeroPad(date.getMinutes(),2) + ':' +
-                  _zeroPad(date.getSeconds(),2));
-          if (precision && typeof(precision) == "number") {
-            var ms = date.getMilliseconds();
-            if (ms) {
-              var millis = _zeroPad(ms.toString(),precision);
-              var s = millis.slice(0, Math.min(precision, millis.length));
-              str += "." + s;
-            }
-          }
-        }
-      }
-      return str;
-    };
-    
-    //
-    // Make it a Date object method
-    //
-    Date.prototype.toISODateString = function(timeDesignator, dateOnly, precision) {
-      return psx.toISODateString(this, timeDesignator, dateOnly, precision);
-    };
-    
-    Date.prototype.toISOString = Date.prototype.toISODateString;
-
-
-
     // EOF EXTRACT from psx.jsx;
     
     //
@@ -348,6 +168,123 @@
     // broken up into smaller classes
     
     Stdlib = function() {};
+    
+    
+    Stdlib.numberToAscii = function(n) {
+      if (isNaN(n)) {
+        return n;
+      }
+      var str = (String.fromCharCode(n >> 24) +
+                 String.fromCharCode((n >> 16) & 0xFF) +
+                 String.fromCharCode((n >> 8) & 0xFF) +
+                 String.fromCharCode(n & 0xFF));
+    
+      return (Stdlib.isAscii(str[0]) && Stdlib.isAscii(str[1]) &&
+              Stdlib.isAscii(str[2]) && Stdlib.isAscii(str[3])) ? str : n;
+    };
+    
+    // Need to implement C-style isAscii functions
+    
+    Stdlib.ASCII_SPECIAL = "\r\n !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~";
+    Stdlib.isSpecialChar = function(c) {
+      return Stdlib.ASCII_SPECIAL.contains(c[0]);
+    };
+    Stdlib.isAscii = function(c) {
+      return !!(c.match(/[\w\s]/) || Stdlib.isSpecialChar(c));
+    };
+
+    Stdlib.ERROR_CODE = 9001;
+    Stdlib.IO_ERROR_CODE = 9002;
+    
+    Stdlib.IOEXCEPTIONS_ENABLED = true;
+    
+    //
+    // throwError
+    //     throw an exception where you would normally have an
+    //     expression e.g.
+    //        var f = File("~/start.ini");
+    //        f.open("r") || Stdlib.throwError(f.error);
+    //
+    Stdlib.throwError = function(e) {
+      throw e;
+    };
+    throwError = Stdlib.throwError;
+    
+    //
+    //============================= File Utilities ===============================
+    //
+    
+    function throwFileError(f, msg) {
+      if (msg == undefined) {
+        msg = '';
+      }
+      Error.runtimeError(Stdlib.IO_ERROR_CODE, Stdlib.fileError(f, msg));
+    };
+    
+    Stdlib.fileError = function(f, msg) {
+      return ("IOError: " + (msg || '') + " \"" + f + "\": " +  f.error + '.');
+    };
+    
+    //
+    // Return a File or Folder object given one of:
+    //    A File or Folder Object
+    //    A string literal or a String object that refers to either
+    //    a File or Folder
+    //
+    Stdlib.convertFptr = function(fptr) {
+      var f;
+    
+      try { if (fptr instanceof XML) fptr = fptr.toString(); } catch (e) {}
+    
+      if (fptr.constructor == String) {
+        f = File(fptr);
+    
+      } else if (fptr instanceof File || fptr instanceof Folder) {
+        f = fptr;
+    
+      } else {
+        Error.runtimeError(19, "fptr");
+      }
+      return f;
+    };
+    
+    Stdlib.selectFolder = function(prompt, start) {
+        var folder;
+      
+        if (!prompt) {
+          prompt = 'Select a folder';
+        }
+      
+        if (start) {
+          start = Stdlib.convertFptr(start);
+          while (start && !start.exists) {
+            start = start.parent;
+          }
+        }
+      
+        if (!start) {
+          folder = Folder.selectDialog(prompt);
+      
+        } else {
+          if (start instanceof File) {
+            start = start.parent;
+          }
+      
+          if (start.selectDlg) {   // for CS2+
+            folder = start.selectDlg(prompt);
+      
+          } else {               // for CS
+            var preset = Folder.current;
+            if (start.exists) {
+              preset = start;
+            }
+            folder = Folder.selectDialog(prompt, preset);
+          }
+        }
+        return folder;
+    };
+
+    
         
     //
     // Return an item called 'name' from the specified container.
@@ -385,7 +322,53 @@
     
       return all ? obj : undefined;
     };
+    
+    
+    // makeActive
+    // Make the object (regardless of class) the 'active' one. Currently, this
+    // works for documents and layers. The one that was active before this call
+    // is returned
+    //
+    Stdlib.makeActive = function(obj) {
+      var prev = undefined;
+    
+      if (!obj) {
+        return undefined;
+      }
+    
+      if (obj.typename == "Document") {
+        prev = app.activeDocument;
+        if (obj != prev) {
+          app.activeDocument = obj;
+        }
+      } else if (obj.typename.match(/Layer/)) {
+        var doc = obj.parent;
+        while (!(doc.typename == "Document") && doc) {
+          doc = doc.parent;
+        }
+        if (!doc) {
+          Error.runtimeError(19, "obj"); // "Bad Layer object specified"
+        }
+    
+        prev = doc.activeLayer;
+        if (obj != prev) { 
+          var d = app.activeDocument;
+          app.activeDocument = doc;
+    
+          try {
+            doc.activeLayer = obj;
+    
+          } catch (e) {
+            $.level = 1; debugger;
+          }
+          app.activeDocument = d;
+        }
+      }
+    
+      return prev;
+    };
 
+    
     //
     // via SzopeN
     // These two vars are used by wrapLC/Layer and control whether or not
@@ -395,6 +378,7 @@
     //
     Stdlib._restoreDoc = true;
     Stdlib._restoreLayer = true;
+    
     
     //
     // ScriptingListener code operates on the "active" document.
@@ -427,7 +411,171 @@
     
       return res;
     };
+    
+    //
+    // The same as wrapLC except it permits specifying a layer
+    //
+    Stdlib.wrapLCLayer = function(doc, layer, ftn) {
+      var ad = app.activeDocument;
+      if (doc) {
+        if (ad != doc) {
+          app.activeDocument = doc;
+        }
+      } else {
+        doc = ad;
+      }
+    
+      var al = doc.activeLayer;
+      var alvis = al.visible;
+    
+      if (layer && doc.activeLayer != layer) {
+        doc.activeLayer = layer;
+    
+      } else {
+        layer = doc.activeLayer;
+      }
+    
+      var res = undefined;
+    
+      try {
+        res = ftn(doc, layer);
+    
+      } finally {
+        if (Stdlib._restoreLayer) {
+          if (doc.activeLayer != al) {
+            try {
+              doc.activeLayer = al;
+            } catch (e) {
+              // XXX-CC2015 Mondo bug work-around from Rune L-H
+              if (app.displayDialogs == DialogModes.NO) {
+                var mode = app.displayDialogs;
+                app.displayDialogs = DialogModes.NO
+                doc.activeLayer = al;
+                app.displayDialogs = mode;
+              }
+            }
+          }
+          if (!doc.activeLayer.isBackgroundLayer) {
+            doc.activeLayer.visible = alvis;
+          }
+        }
+    
+        if (Stdlib._restoreDoc) {
+          if (app.activeDocument != ad) {
+            app.activeDocument = ad;
+          }
+        }
+      }
+    
+      return res;
+    };
 
+    
+    Stdlib.getLayerDescriptor = function(doc, layer, dontWrap) {
+        function _ftn() {
+          var ref = new ActionReference();
+          ref.putEnumerated(cTID("Lyr "), cTID("Ordn"), cTID("Trgt"));
+          return executeActionGet(ref);
+        };
+      
+        if (dontWrap) {
+          Stdlib.makeActive(doc);
+          Stdlib.makeActive(layer);
+          return _ftn();
+        } else {
+          return Stdlib.wrapLCLayer(doc, layer, _ftn);
+        }
+    };
+    
+    
+    Stdlib.isLayerMaskEnabled = function(doc, layer) {
+        var desc = Stdlib.getLayerDescriptor(doc, layer);
+        return (desc.hasKey(cTID("UsrM")) && desc.getBoolean(cTID("UsrM")));
+    };
+    
+    // from discussions with Mike Hale
+    Stdlib.hasLayerMask = function(doc, layer) {
+      function _ftn() {
+        var ref = new ActionReference();
+        ref.putEnumerated(cTID("Lyr "), cTID("Ordn"), cTID("Trgt"));
+        var desc = executeActionGet(ref);
+        /*
+        var keys = ''.concat('Layer ', desc.getString(cTID('Nm  ')), "\n");
+        
+        for (var i = 0; i < desc.count; i++)
+        {
+            keys = keys.concat(id2char(desc.getKey(i) ), "\n");
+        }
+        alert(keys);
+        */
+        return desc.hasKey(cTID("UsrM"));
+      }
+      return Stdlib.wrapLCLayer(doc, layer, _ftn);
+    };
+    
+    Stdlib.disableLayerMask = function(doc, layer) {
+        Stdlib.setLayerMaskEnabledState(doc, layer, false);
+    };
+    
+    Stdlib.enableLayerMask = function(doc, layer) {
+        Stdlib.setLayerMaskEnabledState(doc, layer, true);
+    };
+    
+    Stdlib.setLayerMaskEnabledState = function(doc, layer, state) {
+        function _ftn() {
+          var desc = new ActionDescriptor();
+      
+          var ref = new ActionReference();
+          ref.putEnumerated(cTID('Lyr '), cTID('Ordn'), cTID('Trgt'));
+          desc.putReference(cTID('null'), ref );
+      
+          var tdesc = new ActionDescriptor();
+          tdesc.putBoolean(cTID('UsrM'), state);
+          desc.putObject(cTID('T   '), cTID('Lyr '), tdesc);
+      
+          executeAction(cTID('setd'), desc, DialogModes.NO );
+        }
+        if (state == undefined) {
+          state = false;
+        }
+        Stdlib.wrapLCLayer(doc, layer, _ftn);
+    };
+    
+    
+    Stdlib.getSelectionBounds = function(doc) {
+        function _ftn() {
+      
+          if (CSVersion() > 2) {
+            var bnds = doc.selection.bounds;
+            for (var i = 0; i < bnds.length; i++) {
+              bnds[i] = bnds[i].value;
+            }
+            return bnds;
+          }
+      
+          var l = doc.artLayers.add();
+      
+          doc.selection.fill(app.foregroundColor);
+      
+          var bnds = l.bounds;
+          var hs = doc.historyStates;
+      
+          if (hs[hs.length-2].name == "Layer Order") {
+            doc.activeHistoryState = hs[hs.length-4];
+          } else {
+            doc.activeHistoryState = hs[hs.length-3];
+          }
+      
+          for (var i = 0; i < bnds.length; i++) {
+            bnds[i] = bnds[i].value;
+          }
+          return bnds;
+        }
+      
+        return Stdlib.wrapLCLayer(doc, doc.activeLayer, _ftn);
+    };
+
+    
     //============================= History  ===============================
     //
     // Thanks to Andrew Hall for the idea
@@ -525,7 +673,234 @@
     //   }
     //   return true;
     };
+    
+    //
+    // Format a Date object into a proper ISO 8601 date string
+    //
+    Stdlib.toISODateString = function(date, timeDesignator, dateOnly, precision) {
+      if (!date) date = new Date();
+      var str = '';
+      if (timeDesignator == undefined) { timeDesignator = 'T'; };
+      function _zeroPad(val) { return (val < 10) ? '0' + val : val; }
+      if (date instanceof Date) {
+        str = (date.getFullYear() + '-' +
+               _zeroPad(date.getMonth()+1,2) + '-' +
+               _zeroPad(date.getDate(),2));
+        if (!dateOnly) {
+          str += (timeDesignator +
+                  _zeroPad(date.getHours(),2) + ':' +
+                  _zeroPad(date.getMinutes(),2) + ':' +
+                  _zeroPad(date.getSeconds(),2));
+          if (precision && typeof(precision) == "number") {
+            var ms = date.getMilliseconds();
+            if (ms) {
+              var millis = _zeroPad(ms.toString(),precision);
+              var s = millis.slice(0, Math.min(precision, millis.length));
+              str += "." + s;
+            }
+          }
+        }
+      }
+      return str;
+    };
+    
+    //
+    // Make it a Date object method
+    //
+    Date.prototype.toISODateString = function(timeDesignator, dateOnly, precision) {
+      return Stdlib.toISODateString(this, timeDesignator, dateOnly, precision);
+    };
+    Date.prototype.toISOString = Date.prototype.toISODateString;
 
+
+    Stdlib._getPreferencesFolder = function() {
+        var userData = Folder.userData;
+      
+        if (!userData || !userData.exists) {
+          userData = Folder("~");
+        }
+      
+        var folder = new Folder(userData + "/xtools");
+      
+        if (!folder.exists) {
+          folder.create();
+        }
+      
+        return folder;
+    };
+      
+    Stdlib.PREFERENCES_FOLDER = Stdlib._getPreferencesFolder();
+    
+    //
+    // Write a message out to the default log file.
+    // Prefer UTF8 encoding.
+    // Prefer \n line endings on OS X.
+    //
+    Stdlib.log = function(msg) {
+      var file;
+    
+      if (!Stdlib.log.enabled) {
+        return;
+      }
+    
+      if (!Stdlib.log.filename) {
+        return;
+      }
+    
+    //   if (Stdlib.log.filename.endsWith(".ini")) {
+    //     debugger;
+    //     throw "Bad log file name";
+    //   }
+    
+      if (!Stdlib.log.fptr) {
+        file = new File(Stdlib.log.filename);
+        if (Stdlib.log.append && file.exists) {
+          if (!file.open("e", "TEXT", "????"))  {
+            Error.runtimeError(Stdlib.IO_ERROR_CODE,
+                               "Unable to open log file(1) " +
+                               file + ": " + file.error);
+          }
+          file.seek(0, 2); // jump to the end of the file
+    
+        } else {
+          if (!file.open("w", "TEXT", "????")) {
+            if (!file.open("e", "TEXT", "????")) {
+              Error.runtimeError(Stdlib.IO_ERROR_CODE,
+                                 "Unable to open log file(2) " +
+                                 file + ": " +  file.error);
+            }
+            file.seek(0, 0); // jump to the beginning of the file
+          }
+        }
+        Stdlib.log.fptr = file;
+    
+      } else {
+        file = Stdlib.log.fptr;
+        if (!file.open("e", "TEXT", "????"))  {
+          Error.runtimeError(Stdlib.IO_ERROR_CODE,
+                             "Unable to open log file(3) " +
+                             file + ": " + file.error);
+        }
+        file.seek(0, 2); // jump to the end of the file
+      }
+    
+      if (isMac()) {
+        file.lineFeed = "Unix";
+      }
+    
+      if (Stdlib.log.encoding) {
+        file.encoding = Stdlib.log.encoding;
+      }
+    
+      if (msg) {
+        msg = msg.toString();
+      }
+    
+      if (!file.writeln(new Date().toISODateString() + " - " + msg)) {
+        Error.runtimeError(Stdlib.IO_ERROR_CODE,
+                           "Unable to write to log file(4) " +
+                           file + ": " + file.error);
+      }
+    
+      file.close();
+    };
+    Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/stdout.log";
+    Stdlib.log.enabled = false;
+    Stdlib.log.encoding = "UTF8";
+    Stdlib.log.append = false;
+    Stdlib.log.setFile = function(filename, encoding) {
+      Stdlib.log.filename = filename;
+      Stdlib.log.enabled = filename != undefined;
+      Stdlib.log.encoding = encoding || "UTF8";
+      Stdlib.log.fptr = undefined;
+    };
+    Stdlib.log.setFilename = Stdlib.log.setFile;
+    
+    //
+    // Thanks to Bob Stucky for this...
+    //
+    Stdlib._maxMsgLen = 5000;
+    Stdlib.exceptionMessage = function(e) {
+      var str = '';
+      var fname = (!e.fileName ? '???' : decodeURI(e.fileName));
+      str += "   Message: " + e.message + '\n';
+      str += "   File: " + fname + '\n';
+      str += "   Line: " + (e.line || '???') + '\n';
+      str += "   Error Name: " + e.name + '\n';
+      str += "   Error Number: " + e.number + '\n';
+    
+      if (e.source) {
+        var srcArray = e.source.split("\n");
+        var a = e.line - 10;
+        var b = e.line + 10;
+        var c = e.line - 1;
+        if (a < 0) {
+          a = 0;
+        }
+        if (b > srcArray.length) {
+          b = srcArray.length;
+        }
+        for ( var i = a; i < b; i++ ) {
+          if ( i == c ) {
+            str += "   Line: (" + (i + 1) + ") >> " + srcArray[i] + '\n';
+          } else {
+            str += "   Line: (" + (i + 1) + ")    " + srcArray[i] + '\n';
+          }
+        }
+      }
+    
+      try {
+        if ($.stack) {
+          str += '\n' + $.stack + '\n';
+        }
+      } catch (e) {
+      }
+    
+      if (str.length > Stdlib._maxMsgLen) {
+        str = str.substring(0, Stdlib._maxMsgLen) + '...';
+      }
+    
+      if (Stdlib.log.fptr) {
+        str += "\nLog File:" + Stdlib.log.fptr.toUIString();
+      }
+    
+      return str;
+    };
+    
+    Stdlib.logException = function(e, msg, doAlert) {
+      if (!Stdlib.log.enabled) {
+        return;
+      }
+    
+      if (doAlert == undefined) {
+        doAlert = false;
+    
+        if (msg == undefined) {
+          msg = '';
+        } else if (isBoolean(msg)) {
+          doAlert = msg;
+          msg = '';
+        }
+      }
+    
+      doAlert = !!doAlert;
+    
+      var str = ((msg || '') + "\n" +
+                 "==============Exception==============\n" +
+                 Stdlib.exceptionMessage(e) +
+                 "\n==============End Exception==============\n");
+    
+      Stdlib.log(str);
+    
+      if (doAlert) {
+        str += ("\r\rMore information can be found in the file:\r" +
+                "    " + Stdlib.log.fptr.toUIString());
+    
+        alert(str);
+      }
+    };
+
+    
     // EOF EXTRACT from stdlib.js
 
 
@@ -554,7 +929,7 @@
         browseForOutputFolder: function() {
             var def = this.opts.outputResultsDestinationPath || Folder.current;
       
-            var folder = psx.selectFolder("Select destination folder", def);
+            var folder = Stdlib.selectFolder("Select destination folder", def);
             if (folder) {
                 this.windowRef.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
                 this.opts.outputResultsDestinationPath = folder.fsName;
@@ -794,9 +1169,9 @@
                     mustHideTheLayer = true; // after finishing our job with it
                 }
                 
-                if (psx.hasLayerMask(doc, cropLayerRef)) {
-                    if (!psx.isLayerMaskEnabled(doc, cropLayerRef)) {                    
-                        psx.enableLayerMask(doc, cropLayerRef);
+                if (Stdlib.hasLayerMask(doc, cropLayerRef)) {
+                    if (!Stdlib.isLayerMaskEnabled(doc, cropLayerRef)) {                    
+                        Stdlib.enableLayerMask(doc, cropLayerRef);
                         mustDisableTheLayerMask = true; // after finishing our job with it
                     }
                     
@@ -804,7 +1179,7 @@
                     
                     if (mustDisableTheLayerMask) {
                         mustDisableTheLayerMask = false;
-                        psx.disableLayerMask(doc, cropLayerRef);
+                        Stdlib.disableLayerMask(doc, cropLayerRef);
                     }
                 }
                 else {
@@ -826,7 +1201,7 @@
                 }
             }
             
-            var bounds = psx.getSelectionBounds(doc),
+            var bounds = Stdlib.getSelectionBounds(doc),
                 topLeftX = bounds[0],
                 topLeftY = bounds[1],
                 bottomRightX = bounds[2],
