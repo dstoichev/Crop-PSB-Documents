@@ -1150,9 +1150,7 @@
         },
         
         processDocument: function(doc) {
-            var mustHideTheLayer = false,
-                mustDisableTheLayerMask = false,
-                cropLayerRef;
+            var cropLayerRef;
                 
             app.activeDocument = doc;
                 
@@ -1166,30 +1164,18 @@
                 
                 if (false == cropLayerRef.visible) {
                     cropLayerRef.visible = true;
-                    mustHideTheLayer = true; // after finishing our job with it
                 }
                 
                 if (Stdlib.hasLayerMask(doc, cropLayerRef)) {
                     if (!Stdlib.isLayerMaskEnabled(doc, cropLayerRef)) {                    
                         Stdlib.enableLayerMask(doc, cropLayerRef);
-                        mustDisableTheLayerMask = true; // after finishing our job with it
                     }
                     
-                    this.selectJustTheCrop();
-                    
-                    if (mustDisableTheLayerMask) {
-                        mustDisableTheLayerMask = false;
-                        Stdlib.disableLayerMask(doc, cropLayerRef);
-                    }
+                    this.selectJustTheCrop();                    
                 }
                 else {
                     // select all
                     this.selectAll(doc);
-                }
-                
-                if (mustHideTheLayer) {
-                    cropLayerRef.visible = false;
-                    mustHideTheLayer = false;
                 }
             } catch(e) {                    
                 if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
