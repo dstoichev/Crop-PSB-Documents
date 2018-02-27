@@ -222,7 +222,7 @@
     };
     
     Stdlib.fileError = function(f, msg) {
-      return ("IOError: " + (msg || '') + " \"" + f + "\": " +  f.error + '.');
+      return ("IOError: " + (msg || '') + " \"" + f.toUIString() + "\": " +  f.error + '.');
     };
     
     //
@@ -812,7 +812,7 @@
     
       file.close();
     };
-    Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/stdout.log";
+    Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/error.log";
     Stdlib.log.enabled = true;
     Stdlib.log.encoding = "UTF8";
     Stdlib.log.append = false;
@@ -916,7 +916,7 @@
     /**
      * @param{Object} opts - passed by reference
      */
-    function CropSaverUi(opts) {
+    CropSaverUi = function(opts) {
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
         this.docNote1 = ''.concat('Process all documents currently OPEN in Photoshop.');
@@ -1054,8 +1054,9 @@
     };
 
     
-    function CropSaver() {
+    CropSaver = function() {
         this.alertText = ''.concat('Processed documents:', "\n\n");
+        this.alertTextHasWarnings = false;
                 
         this.cropLayerName = 'CROP';
         
@@ -1073,6 +1074,11 @@
     }
     
     CropSaver.prototype = {
+        addWarningToAlertText: function(docName, msg) {
+            this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
+            this.alertTextHasWarnings = true;
+        },
+        
         /**
          * Copy Merged via ActionManager code
          */
@@ -1147,13 +1153,18 @@
                     Stdlib.revertToSnapshot(doc, snapshotName);
                 }
             } catch (e) {
+                this.addWarningToAlertText(doc.name, 'A problem occurred.');
                 app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
                 Stdlib.revertToSnapshot(doc, snapshotName);
-                Stdlib.logException(e, '', true);
+                Stdlib.logException(e, '', false);
             }
             
             app.activeDocument = currentActive;
             
+            if (this.alertTextHasWarnings) {
+                var moreInfoFileStr = ''.concat("\r\rMore information can be found in the file:\r", "    ", Stdlib.log.fptr.toUIString());
+                this.alertText = ''.concat(this.alertText, "\n\n", 'Some documents were not processed correctly.', '\n', moreInfoFileStr);
+            }
             alert(this.alertText);
         },
         
@@ -1204,9 +1215,10 @@
                 selectionHeight = bottomRightY - topLeftY; 
                 
             this.copyMerged();
-            
-            this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
-            this.saveResult(doc, selectionWidth, selectionHeight);
+                        
+            if (this.saveResult(doc, selectionWidth, selectionHeight)) {
+                this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
+            }
         },
         
         /**
@@ -1215,9 +1227,11 @@
          * @param {Document} doc
          * @param {Number} tempDocWidthAsNumber
          * @param {Number} tempDocHeightAsNumber
+         * @returns {Boolean}
          */
         saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
-            var saveName = doc.name.split('.')[0],
+            var result = true,
+                saveName = doc.name.split('.')[0],
                 tempDocumentName = 'Temp-' + saveName,
                 file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension),
                 currentActive;
@@ -1230,18 +1244,26 @@
             try {
                 currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
-                var msg = ''.concat('Failed to save main output image:', "\n");
-                throwFileError(file, msg);
+                var warnText = 'Failed to save main output image',
+                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ':', file.toUIString(), "\n");
+                
+                this.addWarningToAlertText(doc.name, warnText);
+                Stdlib.logException(e, msg, false);
+                result = false;
             }
             
             if (this.opts.wantSmallSize) {
-                this.saveSmall(currentActive, saveName);
+                if (! this.saveSmall(currentActive, saveName)) {
+                    result = false;
+                }
             }
             
             // Close the temporary document
             currentActive.close(SaveOptions.DONOTSAVECHANGES);
             
             app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
+            
+            return result;
         },
         
         /**
@@ -1252,9 +1274,11 @@
          *
          * @param {Document} doc
          * @param {String} saveName
+         * @returns {Boolean}
          */
         saveSmall: function(doc, saveName) {
-            var maxSize = this.opts.smallSizeOutputImageLongerSide,
+            var result = true,
+                maxSize = this.opts.smallSizeOutputImageLongerSide,
                 width = parseInt(doc.width),
                 height = parseInt(doc.height),
                 outputName, file, method, resolution;
@@ -1271,7 +1295,19 @@
             }
             
             file = new File(this.opts.outputResultsDestinationPath + '/' + outputName);
-            doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+            
+            try {
+                doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+            } catch (e) {
+                var warnText = 'Failed to save small output image',
+                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ':', file.toUIString(), "\n");
+                
+                this.addWarningToAlertText(saveName, warnText);
+                Stdlib.logException(e, msg, false);
+                result = false;
+            }
+            
+            return result;
         },
         
         selectAll: function(doc) {
