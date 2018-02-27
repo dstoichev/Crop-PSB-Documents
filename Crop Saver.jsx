@@ -869,7 +869,7 @@
       }
     
       if (Stdlib.log.fptr) {
-        str += "\nLog File:" + Stdlib.log.fptr.toUIString();
+        str += "\nLog File: " + Stdlib.log.fptr.toUIString();
       }
     
       return str;
@@ -1075,6 +1075,9 @@
     
     CropSaver.prototype = {
         addWarningToAlertText: function(docName, msg) {
+            if (-1 !== this.alertText.indexOf(docName)) {
+                docName = '         ';
+            }
             this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
             this.alertTextHasWarnings = true;
         },
@@ -1245,9 +1248,9 @@
                 currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
                 var warnText = 'Failed to save main output image',
-                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ':', file.toUIString(), "\n");
+                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ': ', file.toUIString(), "\n");
                 
-                this.addWarningToAlertText(doc.name, warnText);
+                this.addWarningToAlertText(doc.name, warnText + '.');
                 Stdlib.logException(e, msg, false);
                 result = false;
             }
@@ -1300,9 +1303,9 @@
                 doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
                 var warnText = 'Failed to save small output image',
-                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ':', file.toUIString(), "\n");
+                    msg = ''.concat('File save error: ', e.message, "\n", warnText, ': ', file.toUIString(), "\n");
                 
-                this.addWarningToAlertText(saveName, warnText);
+                this.addWarningToAlertText(saveName, warnText + '.');
                 Stdlib.logException(e, msg, false);
                 result = false;
             }
