@@ -1051,8 +1051,6 @@
                 
         this.cropLayerName = 'CROP';
         
-        this.isPhotoshop = isPhotoshop();
-        
         this.opts = {
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
@@ -1073,23 +1071,6 @@
         copyMerged: function() {    
             var idCpyM = charIDToTypeID( "CpyM" );
             executeAction( idCpyM, undefined, DialogModes.NO );
-        },
-        
-        /**
-         * Remove Document Ancestors from Files
-         * Resulting smaller size saved image
-         */
-        deleteDocumentAncestorsMetadata: function(doc) {
-            // Check for photoshop specifically, or this will cause errors
-            if (this.isPhotoshop)  { 
-                if (ExternalObject.AdobeXMPScript == undefined) {
-                    ExternalObject.AdobeXMPScript = new ExternalObject("lib:AdobeXMPScript");
-                }
-                var xmp = new XMPMeta(doc.xmpMetadata.rawData);   
-                // Begone foul Document Ancestors!  
-                xmp.deleteProperty(XMPConst.NS_PHOTOSHOP, "DocumentAncestors");  
-                doc.xmpMetadata.rawData = xmp.serialize();  
-            }
         },
         
         init: function() {
@@ -1238,9 +1219,6 @@
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
-            
-            this.deleteDocumentAncestorsMetadata(currentActive);
-            
             currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             
             if (this.opts.wantSmallSize) {
