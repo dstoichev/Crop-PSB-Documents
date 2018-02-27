@@ -711,16 +711,24 @@
       return Stdlib.toISODateString(this, timeDesignator, dateOnly, precision);
     };
     Date.prototype.toISOString = Date.prototype.toISODateString;
+    
+    
+    File.prototype.toUIString = function() {
+      return decodeURI(this.fsName);
+    };
+    Folder.prototype.toUIString = function() {
+      return decodeURI(this.fsName);
+    };
 
 
     Stdlib._getPreferencesFolder = function() {
-        var userData = Folder.userData;
+        var desktop = Folder.desktop;
       
-        if (!userData || !userData.exists) {
-          userData = Folder("~");
+        if (!desktop || !desktop.exists) {
+          desktop = Folder("~");
         }
       
-        var folder = new Folder(userData + "/xtools");
+        var folder = new Folder(desktop + "/CropSaverLog");
       
         if (!folder.exists) {
           folder.create();
@@ -805,7 +813,7 @@
       file.close();
     };
     Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/stdout.log";
-    Stdlib.log.enabled = false;
+    Stdlib.log.enabled = true;
     Stdlib.log.encoding = "UTF8";
     Stdlib.log.append = false;
     Stdlib.log.setFile = function(filename, encoding) {
@@ -1141,7 +1149,7 @@
             } catch (e) {
                 app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
                 Stdlib.revertToSnapshot(doc, snapshotName);
-                alert(e);
+                Stdlib.logException(e, '', true);
             }
             
             app.activeDocument = currentActive;
@@ -1219,7 +1227,12 @@
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
-            currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+            try {
+                currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+            } catch (e) {
+                var msg = ''.concat('Failed to save main output image:', "\n");
+                throwFileError(file, msg);
+            }
             
             if (this.opts.wantSmallSize) {
                 this.saveSmall(currentActive, saveName);
