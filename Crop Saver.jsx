@@ -1076,9 +1076,26 @@
             return this.preferencesWin;
         },
         
-        updateProgress: function(diff) {
+        /**
+         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+         */
+        updateProgress: function(diff, force) {
             this.progressWin.barGroup.bar.value += diff;
-            this.progressWin.update();
+                        
+            if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
+                if (force) {
+                    app.refresh();
+                }
+                else {
+                    this.progressWin.update();
+                }
+            }
+            else {
+                // CS3 and below
+                var d = new ActionDescriptor();
+                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+                app.executeAction(sTID('wait'), d, DialogModes.NO);
+            }
         }
     };
 
