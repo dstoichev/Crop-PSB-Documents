@@ -952,11 +952,11 @@
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
         
-        prepareProgress: function(maxValue) {
+        prepareProgress: function() {
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
                 barGroup: Group { orientation: 'row', \
-                    bar: Progressbar { preferredSize: [300, 16], maxvalue:"+maxValue+" \
+                    bar: Progressbar { preferredSize: [330, 16] \
                     }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
@@ -1186,7 +1186,7 @@
                 doc, start, snapshotName, progressWin;            
             
             try {
-                progressWin = this.ui.prepareProgress(docsCount);
+                progressWin = this.ui.prepareProgress();
                 progressWin.show();
                 
                 for (var i = 0; i < docsCount; i++)
@@ -1197,8 +1197,9 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     this.processDocument(doc);
-                    Stdlib.revertToSnapshot(doc, snapshotName);
-                    this.ui.updateProgress(i + 1);
+                    Stdlib.revertToSnapshot(doc, snapshotName);                    
+                    this.ui.updateProgress( (i + 1) * 100 / docsCount );
+                    //$.sleep(1000);
                 }
             } catch (e) {
                 this.addWarningToAlertText(doc.name, 'A problem occurred.');
