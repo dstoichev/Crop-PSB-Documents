@@ -944,13 +944,17 @@
             }
         },
         
+        closeProgress: function() {
+            this.progressWin.close(0);
+        },
+        
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
         
         prepareProgress: function(maxValue) {
             var resource =
-            "dialog { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill' \
+            "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
                 barGroup: Group { orientation: 'row', \
                     bar: Progressbar { preferredSize: [300, 16], maxvalue:"+maxValue+" \
                     }, \
@@ -962,9 +966,9 @@
             
             this.progressWin = new Window(resource);
             
-            var buttonGroup = this.progressWin.btnGrp;
-            buttonGroup.cancelBtn.onClick = function() {
-                that.progressWin.close(2);
+            var that = this;
+            this.progressWin.btnGrp.cancelBtn.onClick = function() {
+                that.progressWin.close(-1);
             };
             
             this.progressWin.center();
@@ -1070,6 +1074,11 @@
             this.preferencesWin.center();
             
             return this.preferencesWin;
+        },
+        
+        updateProgress: function(diff) {
+            this.progressWin.barGroup.bar.value += diff;
+            this.progressWin.update();
         }
     };
 
@@ -1154,7 +1163,7 @@
             this.initPreferences();
             
             var docs = app.documents,
-                docsCount = docs.length;
+                docsCount = docs.length,
                 currentActive = app.activeDocument,                
                 snapshotNameBase ='BeforeCropSaver: ',
                 doc, start, snapshotName, progressWin;            
@@ -1172,6 +1181,7 @@
                     Stdlib.takeSnapshot(doc, snapshotName);
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
+                    this.ui.updateProgress(i + 1);
                 }
             } catch (e) {
                 this.addWarningToAlertText(doc.name, 'A problem occurred.');
@@ -1179,6 +1189,8 @@
                 Stdlib.revertToSnapshot(doc, snapshotName);
                 Stdlib.logException(e, '', false);
             }
+            
+            this.ui.closeProgress();
             
             app.activeDocument = currentActive;
             
