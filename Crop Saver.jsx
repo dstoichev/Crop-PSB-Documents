@@ -929,7 +929,8 @@
         
         this.title = 'Image Saving Preferences';
         
-        this.windowRef = null;
+        this.preferencesWin = null;
+        this.progressWin = null;
     }
 
     CropSaverUi.prototype = {
@@ -938,13 +939,37 @@
       
             var folder = Stdlib.selectFolder("Select destination folder", def);
             if (folder) {
-                this.windowRef.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
+                this.preferencesWin.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
                 this.opts.outputResultsDestinationPath = folder.fsName;
             }
         },
         
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
+        },
+        
+        prepareProgress: function(maxValue) {
+            var resource =
+            "dialog { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill' \
+                barGroup: Group { orientation: 'row', \
+                    bar: Progressbar { preferredSize: [300, 16], maxvalue:"+maxValue+" \
+                    }, \
+                }, \
+                btnGrp: Group { orientation:'row', alignment: 'right', \
+                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
+                } \
+            }";
+            
+            this.progressWin = new Window(resource);
+            
+            var buttonGroup = this.progressWin.btnGrp;
+            buttonGroup.cancelBtn.onClick = function() {
+                that.progressWin.close(2);
+            };
+            
+            this.progressWin.center();
+            
+            return this.progressWin;
         },
         
         prepareWindow: function() {
@@ -988,10 +1013,10 @@
             }";
             
             // Create a window of type dialog.
-            this.windowRef = new Window(resource);
-            this.windowRef.notePnl.st.text = this.docNote;            
+            this.preferencesWin = new Window(resource);
+            this.preferencesWin.notePnl.st.text = this.docNote;            
             
-            var settings = this.windowRef.settingsPnl;
+            var settings = this.preferencesWin.settingsPnl;
             
             // Register event listeners that define the button behavior
             settings.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
@@ -1034,17 +1059,17 @@
                 that.opts.smallSizeOutputImageLongerSide = size;
             };
             
-            var buttonGroup = this.windowRef.btnGrp;
+            var buttonGroup = this.preferencesWin.btnGrp;
             buttonGroup.processBtn.onClick = function() {
-                that.windowRef.close(0);
+                that.preferencesWin.close(0);
             };
             buttonGroup.cancelBtn.onClick = function() {
-                that.windowRef.close(2);
+                that.preferencesWin.close(2);
             };
             
-            this.windowRef.center();
+            this.preferencesWin.center();
             
-            return this.windowRef;
+            return this.preferencesWin;
         }
     };
 
@@ -1066,6 +1091,8 @@
         
         this.outputFileExtension = '';
         this.saveOptions = null;
+        
+        this.ui = null;
     }
     
     CropSaver.prototype = {
@@ -1090,18 +1117,10 @@
             app.preferences.rulerUnits = Units.PIXELS;
                         
             try {
-                var ui = new CropSaverUi(this.opts),
-                    //alertText = ''.concat('Crop Saver Preferences:', "\n"),
-                    win = ui.prepareWindow(),
+                this.ui = new CropSaverUi(this.opts);
+                var win = this.ui.prepareWindow(),
                     result = win.show();
-                /*
-                alertText = alertText.concat('Gettind Preferences Result: ', result, "\n",
-                                             'Preferences: ', "\n",
-                                             this.opts.outputResultsDestinationPath, "\n",
-                                             this.opts.outputImageType, "\n",
-                                             this.opts.wantSmallSize, "\n");
-                alert(alertText);
-                */
+                
                 if (2 != result) {                    
                     this.main();
                 }
@@ -1135,12 +1154,16 @@
             this.initPreferences();
             
             var docs = app.documents,
+                docsCount = docs.length;
                 currentActive = app.activeDocument,                
                 snapshotNameBase ='BeforeCropSaver: ',
-                doc, start, snapshotName;            
+                doc, start, snapshotName, progressWin;            
             
-            try {    
-                for (var i = 0; i < docs.length; i++)
+            try {
+                progressWin = this.ui.prepareProgress(docsCount);
+                progressWin.show();
+                
+                for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
                     start = new Date();
