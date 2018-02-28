@@ -901,7 +901,7 @@
       Stdlib.log(str);
     
       if (doAlert) {
-        str += ("\r\rMore information can be found in the file:\r" +
+        str += ("\r\rMore information can be found in file:\r" +
                 "    " + Stdlib.log.fptr.toUIString());
     
         alert(str);
@@ -919,9 +919,8 @@
     CropSaverUi = function(opts) {
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
-        this.docNote1 = ''.concat('Process all documents currently OPEN in Photoshop.');
-        
-        this.docNote2 = ''.concat('Save an image cropped via the CROP layer ',
+        this.docNote = ''.concat("\n", 'Process all documents currently OPEN in Photoshop.', "\n\n",
+                                 'Save an image cropped via the CROP layer ',
                                   'when this layer exists and an image AS IS when the layer is absent.');
         
         this.opts = opts;
@@ -958,10 +957,7 @@
                 text: '"+this.title+"', frameLocation:[100, 100],  \
                 notePnl: Panel { orientation:'column', alignment: 'fill', \
                     text: 'Note', \
-                    st1: StaticText { text: '', alignment: 'fill', \
-                                     properties: {multiline: true} \
-                    }, \
-                    st2: StaticText { text: '', alignment: 'fill', \
+                    st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
                 }, \
@@ -993,8 +989,7 @@
             
             // Create a window of type dialog.
             this.windowRef = new Window(resource);
-            this.windowRef.notePnl.st1.text = this.docNote1;
-            this.windowRef.notePnl.st2.text = this.docNote2;
+            this.windowRef.notePnl.st.text = this.docNote;            
             
             var settings = this.windowRef.settingsPnl;
             
@@ -1165,8 +1160,8 @@
             app.activeDocument = currentActive;
             
             if (this.alertTextHasWarnings) {
-                var moreInfoFileStr = ''.concat("\r\rMore information can be found in the file:\r", "    ", Stdlib.log.fptr.toUIString());
-                this.alertText = ''.concat(this.alertText, "\n\n", 'Some documents were not processed correctly.', '\n', moreInfoFileStr);
+                var moreInfoFileStr = ''.concat("More information can be found in file:\n", "    ", Stdlib.log.fptr.toUIString());
+                this.alertText = ''.concat(this.alertText, "\n\n", 'Some documents were not processed correctly.', "\n\n", moreInfoFileStr);
             }
             alert(this.alertText);
         },
