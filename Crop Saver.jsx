@@ -1079,8 +1079,8 @@
         /**
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
-        updateProgress: function(diff, force) {
-            this.progressWin.barGroup.bar.value += diff;
+        updateProgress: function(percent, force) {
+            this.progressWin.barGroup.bar.value = percent;
                         
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
                 if (force) {
@@ -1199,7 +1199,7 @@
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);                    
                     this.ui.updateProgress( (i + 1) * 100 / docsCount );
-                    //$.sleep(1000);
+                    $.sleep(1000);
                 }
             } catch (e) {
                 this.addWarningToAlertText(doc.name, 'A problem occurred.');
