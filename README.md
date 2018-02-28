@@ -12,7 +12,7 @@ or
  - In Photoshop select File > Scripts > Browse. Find and select the script. Click Load.
 
 # Installation:
- 1. Place "Crop Saver.jsx" or its alias(Mac) or shortcut(Windows) in <Photoshop Directory>/presets/scripts/
+ 1. Place "Crop Saver.jsx" or its alias(Mac) or shortcut(Windows) in --Photoshop Directory--/presets/scripts/
 
  2. Restart Photoshop
 
