@@ -1212,8 +1212,13 @@
                 selectionWidth = bottomRightX - topLeftX,
                 selectionHeight = bottomRightY - topLeftY; 
                 
-            this.copyMerged();
-                        
+            if (1 < doc.layers.length) {
+                this.copyMerged();
+            }
+            else {
+                doc.selection.copy();
+            }
+            
             if (this.saveResult(doc, selectionWidth, selectionHeight)) {
                 this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
             }
