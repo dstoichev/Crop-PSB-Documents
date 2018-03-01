@@ -1214,17 +1214,13 @@
                 docsCount = docs.length,
                 currentActive = app.activeDocument,                
                 snapshotNameBase ='BeforeCropSaver: ',
-                doc, start, snapshotName, progressWin;            
+                doc, start, snapshotName, progressWin, percentComplete;
             
             try {
                 progressWin = this.ui.prepareProgress();
                 progressWin.show();
-                for (var j = 1; j < 11; j++)
-                {
-                    this.ui.updateProgress(j*10);                    
-                    $.sleep(2000);
-                }
-                return;
+                this.ui.updateProgress(1);
+                
                 for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
@@ -1234,8 +1230,11 @@
                     Stdlib.takeSnapshot(doc, snapshotName);
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
-                    this.ui.updateProgress( (i + 1) * 100 / docsCount );
+                    
+                    percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
+                    this.ui.updateProgress( percentComplete );
                     $.sleep(1000);
+                    
                     this.checkCancelledByClient();
                 }
             } catch (e) {
