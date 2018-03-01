@@ -955,11 +955,10 @@
         prepareProgress: function() {
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
-                barGroup: Group { orientation: 'row', \
-                    bar: Progressbar { preferredSize: [300, 16], alignment: ['left', 'center'] \
+                barGroup: Group { orientation: 'row', alignment: 'left', \
+                    bar: Progressbar { preferredSize: [200, 16], alignment: ['left', 'center'] \
                     }, \
-                    stPercentVal: StaticText { alignment: ['right', 'center'], text: '0', characters: 3, justify: 'right' }, \
-                    stPercentSym: StaticText { alignment: ['right', 'center'], text: '%', characters: 1 }, \
+                    stPercent: StaticText { alignment: ['right', 'center'], text: '000%', characters: 4 } \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
@@ -1083,10 +1082,11 @@
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
         updateProgress: function(percent, force) {
-            var barGroup = this.progressWin.barGroup;
+            var barGroup = this.progressWin.barGroup,
+                percent = Math.floor(percent);
             
             barGroup.bar.value = percent;
-            barGroup.stPercentVal.text = percent;
+            barGroup.stPercent.text = percent + '%';
                         
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
                 if (force) {
@@ -1219,8 +1219,12 @@
             try {
                 progressWin = this.ui.prepareProgress();
                 progressWin.show();
-                this.ui.updateProgress(1);
-                
+                for (var j = 1; j < 11; j++)
+                {
+                    this.ui.updateProgress(j*10);                    
+                    $.sleep(2000);
+                }
+                return;
                 for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
