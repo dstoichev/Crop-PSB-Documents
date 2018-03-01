@@ -1214,6 +1214,7 @@
             try {
                 progressWin = this.ui.prepareProgress();
                 progressWin.show();
+                this.ui.updateProgress(1);
                 
                 for (var i = 0; i < docsCount; i++)
                 {
