@@ -956,9 +956,9 @@
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
                 barGroup: Group { orientation: 'row', alignment: 'left', \
-                    bar: Progressbar { preferredSize: [277, 16], alignment: ['left', 'center'] \
+                    bar: Progressbar { preferredSize: [278, 16], alignment: ['left', 'center'] \
                     }, \
-                    stPercent: StaticText { alignment: ['right', 'center'], text: '0000%', characters: 5, justify: 'right' } \
+                    stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
@@ -1086,7 +1086,7 @@
                 percent = parseInt(percent, 10);
             
             barGroup.bar.value = percent;
-            barGroup.stPercent.text = ((100 > percent) ? ' ' : '') + '' + percent + '%';
+            barGroup.stPercent.text = percent + '% ';
                         
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
                 if (force) {
