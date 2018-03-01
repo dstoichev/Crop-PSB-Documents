@@ -968,6 +968,7 @@
             
             var that = this;
             this.progressWin.btnGrp.cancelBtn.onClick = function() {
+                that.opts.isCancelledByClient = true;
                 that.progressWin.close(-1);
             };
             
@@ -1103,10 +1104,13 @@
     CropSaver = function() {
         this.alertText = ''.concat('Processed documents:', "\n\n");
         this.alertTextHasWarnings = false;
+        
+        this.cancelledByClientMessage = 'CancelledByClient';
                 
         this.cropLayerName = 'CROP';
         
         this.opts = {
+            isCancelledByClient: false,
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
@@ -1128,6 +1132,28 @@
             }
             this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
             this.alertTextHasWarnings = true;
+        },
+        
+        /**
+         * Throws an Error with special message
+         * or returns boolean
+         *
+         * @param {boolean} returnBoolean
+         * @returns {boolean}
+         */
+        checkCancelledByClient: function(returnBoolean) {
+            var result = false;
+            
+            if (this.opts.isCancelledByClient) {
+                if (! returnBoolean) {
+                    throw new Error(this.cancelledByClientMessage);
+                }
+                else {
+                    result = true;
+                }
+            }
+            
+            return result;
         },
         
         /**
@@ -1197,15 +1223,22 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     this.processDocument(doc);
-                    Stdlib.revertToSnapshot(doc, snapshotName);                    
+                    Stdlib.revertToSnapshot(doc, snapshotName);
                     this.ui.updateProgress( (i + 1) * 100 / docsCount );
                     $.sleep(1000);
+                    this.checkCancelledByClient();
                 }
             } catch (e) {
-                this.addWarningToAlertText(doc.name, 'A problem occurred.');
+                var msgToLog = '',
+                    msgForUser = 'A problem occurred.';
+                if (this.cancelledByClientMessage === e.message) {
+                    msgToLog = 'Script execution was cancelled by User.';
+                    msgForUser = 'You cancelled Crop Saver execution.';
+                }
+                this.addWarningToAlertText(doc.name, msgForUser);
                 app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
                 Stdlib.revertToSnapshot(doc, snapshotName);
-                Stdlib.logException(e, '', false);
+                Stdlib.logException(e, msgToLog, false);
             }
             
             this.ui.closeProgress();
@@ -1247,6 +1280,8 @@
                     // select all
                     this.selectAll(doc);
                 }
+                
+                this.checkCancelledByClient();
             } catch(e) {                    
                 if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
                     // select all
@@ -1272,6 +1307,8 @@
                 doc.selection.copy();
             }
             
+            this.checkCancelledByClient();
+            
             if (this.saveResult(doc, selectionWidth, selectionHeight)) {
                 this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
             }
@@ -1283,7 +1320,7 @@
          * @param {Document} doc
          * @param {Number} tempDocWidthAsNumber
          * @param {Number} tempDocHeightAsNumber
-         * @returns {Boolean}
+         * @returns {boolean}
          */
         saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
             var result = true,
@@ -1298,6 +1335,13 @@
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
+            
+            if (this.checkCancelledByClient(true)) {
+                currentActive.close(SaveOptions.DONOTSAVECHANGES);
+                app.activeDocument = doc;
+                throw new Error(this.cancelledByClientMessage);
+            }
+            
             try {
                 currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
@@ -1331,7 +1375,7 @@
          *
          * @param {Document} doc
          * @param {String} saveName
-         * @returns {Boolean}
+         * @returns {boolean}
          */
         saveSmall: function(doc, saveName) {
             var result = true,
