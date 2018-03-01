@@ -961,9 +961,10 @@
                     stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                 }, \
                 infoGroup: Group { orientation: 'column', alignChildren: 'fill', \
-                    stDoc: StaticText { text: ' ', characters: 40, properties: {multiline: true} } \
-                    stWarn: StaticText { text: 'Please do not make changes to current document !', characters: 40, properties: {multiline: true} } \
-                }, \ 
+                    stDoc: StaticText { text: ' ', characters: 40, properties: {multiline: true} }, \
+                    stWarn: StaticText { text: 'Please do not make changes to current document !', characters: 40, \
+                                         properties: {multiline: true} } \
+                }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
                 } \
@@ -1239,12 +1240,13 @@
                     Stdlib.takeSnapshot(doc, snapshotName);
                     
                     this.ui.updateProgress( percentComplete, 'Processing: ' + doc.name );
-                    $.sleep(1000);
                     
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
+                    this.ui.updateProgress( percentComplete );
+                    $.sleep(1000);
                                         
                     this.checkCancelledByClient();
                 }
