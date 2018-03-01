@@ -956,8 +956,10 @@
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
                 barGroup: Group { orientation: 'row', \
-                    bar: Progressbar { preferredSize: [330, 16] \
+                    bar: Progressbar { preferredSize: [300, 16], alignment: ['left', 'center'] \
                     }, \
+                    stPercentVal: StaticText { alignment: ['right', 'center'], text: '0', characters: 3, justify: 'right' }, \
+                    stPercentSym: StaticText { alignment: ['right', 'center'], text: '%', characters: 1 }, \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
@@ -1081,7 +1083,10 @@
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
         updateProgress: function(percent, force) {
-            this.progressWin.barGroup.bar.value = percent;
+            var barGroup = this.progressWin.barGroup;
+            
+            barGroup.bar.value = percent;
+            barGroup.stPercentVal.text = percent;
                         
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
                 if (force) {
