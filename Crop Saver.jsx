@@ -960,6 +960,10 @@
                     }, \
                     stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                 }, \
+                infoGroup: Group { orientation: 'column', alignChildren: 'fill', \
+                    stDoc: StaticText { text: ' ', characters: 40, properties: {multiline: true} } \
+                    stWarn: StaticText { text: 'Please do not make changes to current document !', characters: 40, properties: {multiline: true} } \
+                }, \ 
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
                 } \
@@ -1081,13 +1085,18 @@
         /**
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
-        updateProgress: function(percent, force) {
+        updateProgress: function(percent, currentDoc, force) {
             var barGroup = this.progressWin.barGroup,
+                infoGroup = this.progressWin.infoGroup,
                 percent = parseInt(percent, 10);
             
             barGroup.bar.value = percent;
             barGroup.stPercent.text = percent + '% ';
-                        
+            
+            if (currentDoc) {
+                infoGroup.stDoc.text = currentDoc;
+            }
+            
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
                 if (force) {
                     app.refresh();
@@ -1214,12 +1223,12 @@
                 docsCount = docs.length,
                 currentActive = app.activeDocument,                
                 snapshotNameBase ='BeforeCropSaver: ',
-                doc, start, snapshotName, progressWin, percentComplete;
+                percentComplete = 1,
+                doc, start, snapshotName, progressWin;
             
             try {
                 progressWin = this.ui.prepareProgress();
                 progressWin.show();
-                this.ui.updateProgress(1);
                 
                 for (var i = 0; i < docsCount; i++)
                 {
@@ -1228,13 +1237,15 @@
                     snapshotName = snapshotNameBase + start.toISOString('T', false, 3);
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
+                    
+                    this.ui.updateProgress( percentComplete, 'Processing: ' + doc.name );
+                    $.sleep(1000);
+                    
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
-                    this.ui.updateProgress( percentComplete );
-                    $.sleep(1000);
-                    
+                                        
                     this.checkCancelledByClient();
                 }
             } catch (e) {
