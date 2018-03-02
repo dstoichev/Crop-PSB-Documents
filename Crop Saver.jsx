@@ -919,8 +919,8 @@
     CropSaverUi = function(opts) {
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
-        this.docNote = ''.concat("\n", 'Process all documents currently OPEN in Photoshop.', "\n\n",
-                                 'Save an image cropped via the CROP layer ',
+        this.docNote = ''.concat("\n", 'Processes all documents currently OPEN in Photoshop.', "\n\n",
+                                 'Saves an image cropped via the CROP layer ',
                                   'when this layer exists and an image AS IS when the layer is absent.');
         
         this.opts = opts;
@@ -963,8 +963,7 @@
                 infoGroup: Group { orientation: 'column', alignment: 'fill', \
                                    alignChildren: 'fill', maximumSize: [1000, 40], \
                     stDoc: StaticText { text: ' ', properties: {multiline: true} }, \
-                    stWarn: StaticText { text: 'Please do not make changes to current document !', characters: 40, \
-                                         properties: {multiline: true} } \
+                    stWarn: StaticText { text: 'Please do not make changes to current document !' } \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
@@ -992,7 +991,7 @@
             var resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 100], margins: [15, 0, 10, 15], \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 90], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
