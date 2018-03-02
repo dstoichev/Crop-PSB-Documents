@@ -954,14 +954,15 @@
         
         prepareProgress: function() {
             var resource =
-            "palette { orientation:'column', text: 'Please wait...', preferredSize: [350, 30], alignChildren: 'fill', \
+            "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
                 barGroup: Group { orientation: 'row', alignment: 'left', \
-                    bar: Progressbar { preferredSize: [278, 16], alignment: ['left', 'center'] \
+                    bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
                     }, \
                     stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                 }, \
-                infoGroup: Group { orientation: 'column', alignChildren: 'fill', \
-                    stDoc: StaticText { text: ' ', characters: 40, properties: {multiline: true} }, \
+                infoGroup: Group { orientation: 'column', alignment: 'fill', \
+                                   alignChildren: 'fill', maximumSize: [1000, 40], \
+                    stDoc: StaticText { text: ' ', properties: {multiline: true} }, \
                     stWarn: StaticText { text: 'Please do not make changes to current document !', characters: 40, \
                                          properties: {multiline: true} } \
                 }, \
@@ -1089,13 +1090,19 @@
         updateProgress: function(percent, currentDoc, force) {
             var barGroup = this.progressWin.barGroup,
                 infoGroup = this.progressWin.infoGroup,
-                percent = parseInt(percent, 10);
+                percent = parseInt(percent, 10),
+                maxInfoLength = 62,
+                processingInfo = '';
             
             barGroup.bar.value = percent;
             barGroup.stPercent.text = percent + '% ';
             
             if (currentDoc) {
-                infoGroup.stDoc.text = currentDoc;
+                processingInfo = currentDoc;
+                if (maxInfoLength < currentDoc.length) {
+                    processingInfo = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                }
+                infoGroup.stDoc.text = processingInfo;
             }
             
             if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
