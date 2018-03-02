@@ -138,7 +138,7 @@
     isCS3    = function()  { return CSVersion._version == 3; };
     isCS2    = function()  { return CSVersion._version == 2; };
     isCS     = function()  { return CSVersion._version == 1; };
-
+    
 
     // EOF EXTRACT from psx.jsx;
     
@@ -919,8 +919,8 @@
     CropSaverUi = function(opts) {
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
-        this.docNote = ''.concat("\n", 'Process all documents currently OPEN in Photoshop.', "\n\n",
-                                 'Save an image cropped via the CROP layer ',
+        this.docNote = ''.concat("\n", 'Processes all documents currently OPEN in Photoshop.', "\n\n",
+                                 'Saves an image cropped via the CROP layer ',
                                   'when this layer exists and an image AS IS when the layer is absent.');
         
         this.opts = opts;
@@ -929,7 +929,8 @@
         
         this.title = 'Image Saving Preferences';
         
-        this.windowRef = null;
+        this.preferencesWin = null;
+        this.progressWin = null;
     }
 
     CropSaverUi.prototype = {
@@ -938,13 +939,48 @@
       
             var folder = Stdlib.selectFolder("Select destination folder", def);
             if (folder) {
-                this.windowRef.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
+                this.preferencesWin.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
                 this.opts.outputResultsDestinationPath = folder.fsName;
             }
         },
         
+        closeProgress: function() {
+            this.progressWin.close(0);
+        },
+        
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
+        },
+        
+        prepareProgress: function() {
+            var resource =
+            "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
+                barPanel: Panel { orientation: 'row', alignment: 'left', text: 'Progress', \
+                    bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
+                    }, \
+                    stPercent: StaticText { alignment: ['right', 'center'], text: '  0% ', characters: 4, justify: 'right' } \
+                }, \
+                infoGroup: Group { orientation: 'column', alignment: 'fill', \
+                                   alignChildren: 'fill', maximumSize: [1000, 40], \
+                    stDoc: StaticText { text: ' ', properties: {multiline: true} }, \
+                    stWarn: StaticText { text: 'Please do not make changes to current document !' } \
+                }, \
+                btnGrp: Group { orientation:'row', alignment: 'right', \
+                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
+                } \
+            }";
+            
+            this.progressWin = new Window(resource);
+            
+            var that = this;
+            this.progressWin.btnGrp.cancelBtn.onClick = function() {
+                that.opts.isCancelledByClient = true;
+                that.progressWin.close(-1);
+            };
+            
+            this.progressWin.center();
+            
+            return this.progressWin;
         },
         
         prepareWindow: function() {
@@ -955,7 +991,7 @@
             var resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 90], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
@@ -988,10 +1024,10 @@
             }";
             
             // Create a window of type dialog.
-            this.windowRef = new Window(resource);
-            this.windowRef.notePnl.st.text = this.docNote;            
+            this.preferencesWin = new Window(resource);
+            this.preferencesWin.notePnl.st.text = this.docNote;            
             
-            var settings = this.windowRef.settingsPnl;
+            var settings = this.preferencesWin.settingsPnl;
             
             // Register event listeners that define the button behavior
             settings.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
@@ -1034,17 +1070,43 @@
                 that.opts.smallSizeOutputImageLongerSide = size;
             };
             
-            var buttonGroup = this.windowRef.btnGrp;
+            var buttonGroup = this.preferencesWin.btnGrp;
             buttonGroup.processBtn.onClick = function() {
-                that.windowRef.close(0);
+                that.preferencesWin.close(0);
             };
             buttonGroup.cancelBtn.onClick = function() {
-                that.windowRef.close(2);
+                that.preferencesWin.close(2);
             };
             
-            this.windowRef.center();
+            this.preferencesWin.center();
             
-            return this.windowRef;
+            return this.preferencesWin;
+        },
+        
+        /**
+         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+         */
+        updateProgress: function(percent, currentDoc, force) {
+            var barPanel = this.progressWin.barPanel,
+                infoGroup = this.progressWin.infoGroup,
+                percent = parseInt(percent, 10),
+                maxInfoLength = 62,
+                processingInfo = '';
+            
+            barPanel.bar.value = percent;
+            barPanel.stPercent.text = percent + '% ';
+            
+            if (currentDoc) {
+                processingInfo = currentDoc;
+                if (maxInfoLength < currentDoc.length) {
+                    processingInfo = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                }
+                infoGroup.stDoc.text = processingInfo;
+            }
+            
+            var d = new ActionDescriptor();
+            d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+            app.executeAction(sTID('wait'), d, DialogModes.NO);
         }
     };
 
@@ -1052,10 +1114,13 @@
     CropSaver = function() {
         this.alertText = ''.concat('Processed documents:', "\n\n");
         this.alertTextHasWarnings = false;
+        
+        this.cancelledByClientMessage = 'CancelledByClient';
                 
         this.cropLayerName = 'CROP';
         
         this.opts = {
+            isCancelledByClient: false,
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
@@ -1066,6 +1131,8 @@
         
         this.outputFileExtension = '';
         this.saveOptions = null;
+        
+        this.ui = null;
     }
     
     CropSaver.prototype = {
@@ -1075,6 +1142,28 @@
             }
             this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
             this.alertTextHasWarnings = true;
+        },
+        
+        /**
+         * Throws an Error with special message
+         * or returns boolean
+         *
+         * @param {boolean} returnBoolean
+         * @returns {boolean}
+         */
+        checkCancelledByClient: function(returnBoolean) {
+            var result = false;
+            
+            if (this.opts.isCancelledByClient) {
+                if (! returnBoolean) {
+                    throw new Error(this.cancelledByClientMessage);
+                }
+                else {
+                    result = true;
+                }
+            }
+            
+            return result;
         },
         
         /**
@@ -1090,18 +1179,10 @@
             app.preferences.rulerUnits = Units.PIXELS;
                         
             try {
-                var ui = new CropSaverUi(this.opts),
-                    //alertText = ''.concat('Crop Saver Preferences:', "\n"),
-                    win = ui.prepareWindow(),
+                this.ui = new CropSaverUi(this.opts);
+                var win = this.ui.prepareWindow(),
                     result = win.show();
-                /*
-                alertText = alertText.concat('Gettind Preferences Result: ', result, "\n",
-                                             'Preferences: ', "\n",
-                                             this.opts.outputResultsDestinationPath, "\n",
-                                             this.opts.outputImageType, "\n",
-                                             this.opts.wantSmallSize, "\n");
-                alert(alertText);
-                */
+                
                 if (2 != result) {                    
                     this.main();
                 }
@@ -1135,27 +1216,48 @@
             this.initPreferences();
             
             var docs = app.documents,
+                docsCount = docs.length,
                 currentActive = app.activeDocument,                
                 snapshotNameBase ='BeforeCropSaver: ',
-                doc, start, snapshotName;            
+                percentComplete = 1,
+                doc, start, snapshotName, progressWin;
             
-            try {    
-                for (var i = 0; i < docs.length; i++)
+            try {
+                progressWin = this.ui.prepareProgress();
+                progressWin.show();
+                
+                for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
                     start = new Date();
                     snapshotName = snapshotNameBase + start.toISOString('T', false, 3);
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
+                    
+                    this.ui.updateProgress( percentComplete, 'Processing: ' + doc.name );
+                    
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
+                    
+                    percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
+                    this.ui.updateProgress( percentComplete );
+                                                            
+                    this.checkCancelledByClient();
                 }
             } catch (e) {
-                this.addWarningToAlertText(doc.name, 'A problem occurred.');
+                var msgToLog = '',
+                    msgForUser = 'A problem occurred.';
+                if (this.cancelledByClientMessage === e.message) {
+                    msgToLog = 'Script execution was cancelled by User.';
+                    msgForUser = 'You cancelled Crop Saver execution.';
+                }
+                this.addWarningToAlertText(doc.name, msgForUser);
                 app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
                 Stdlib.revertToSnapshot(doc, snapshotName);
-                Stdlib.logException(e, '', false);
+                Stdlib.logException(e, msgToLog, false);
             }
+            
+            this.ui.closeProgress();
             
             app.activeDocument = currentActive;
             
@@ -1194,6 +1296,8 @@
                     // select all
                     this.selectAll(doc);
                 }
+                
+                this.checkCancelledByClient();
             } catch(e) {                    
                 if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
                     // select all
@@ -1219,6 +1323,8 @@
                 doc.selection.copy();
             }
             
+            this.checkCancelledByClient();
+            
             if (this.saveResult(doc, selectionWidth, selectionHeight)) {
                 this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
             }
@@ -1230,7 +1336,7 @@
          * @param {Document} doc
          * @param {Number} tempDocWidthAsNumber
          * @param {Number} tempDocHeightAsNumber
-         * @returns {Boolean}
+         * @returns {boolean}
          */
         saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
             var result = true,
@@ -1245,6 +1351,13 @@
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
+            
+            if (this.checkCancelledByClient(true)) {
+                currentActive.close(SaveOptions.DONOTSAVECHANGES);
+                app.activeDocument = doc;
+                throw new Error(this.cancelledByClientMessage);
+            }
+            
             try {
                 currentActive.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
@@ -1278,7 +1391,7 @@
          *
          * @param {Document} doc
          * @param {String} saveName
-         * @returns {Boolean}
+         * @returns {boolean}
          */
         saveSmall: function(doc, saveName) {
             var result = true,
