@@ -139,6 +139,38 @@
     isCS2    = function()  { return CSVersion._version == 2; };
     isCS     = function()  { return CSVersion._version == 1; };
     
+    //
+    // psx works as a namespace for commonly used functions
+    //
+    psx = function() {};
+    
+    //
+    // Description: Should the PS locale be used to determine the
+    //              decimal point or should the OS locale be used.
+    //              PS uses the OS locale so scripts may not match
+    //              the PS UI.
+    //
+    psx.USE_PS_LOCALE_FOR_DECIMAL_PT = true;
+    
+    // 
+    // Function: determineDecimalPoint
+    // Description: determine what to use for the decimal point
+    // Input:  <none>
+    // Return: a locale-specific decimal point
+    //
+    // Note: Currently there is no way to determine what decimal
+    //       point is being used in the PS UI so this always returns
+    //       the decimal point for the PS locale
+    //
+    psx.determineDecimalPoint = function() {
+    //   if (psx.USE_PS_LOCALE_FOR_DECIMAL_PT) {
+        psx.decimalPoint = $.decimalPoint;
+    //   }
+      return psx.decimalPoint;
+    };
+    psx.determineDecimalPoint();
+
+    
     psxui = function() {}
     
     // XXX - Need to check to see if decimalPoint is a special RegEx character
