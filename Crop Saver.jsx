@@ -1104,20 +1104,9 @@
                 infoGroup.stDoc.text = processingInfo;
             }
             
-            if (CSVersion._version >= 4) {	// CS4 added support for UI updates; the previous method became unbearably slow, as is app.refresh()
-                if (force) {
-                    app.refresh();
-                }
-                else {
-                    this.progressWin.update();
-                }
-            }
-            else {
-                // CS3 and below
-                var d = new ActionDescriptor();
-                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
-                app.executeAction(sTID('wait'), d, DialogModes.NO);
-            }
+            var d = new ActionDescriptor();
+            d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+            app.executeAction(sTID('wait'), d, DialogModes.NO);
         }
     };
 
@@ -1252,8 +1241,7 @@
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
                     this.ui.updateProgress( percentComplete );
-                    $.sleep(1000);
-                                        
+                                                            
                     this.checkCancelledByClient();
                 }
             } catch (e) {
