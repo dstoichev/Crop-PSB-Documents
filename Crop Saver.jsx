@@ -139,45 +139,6 @@
     isCS2    = function()  { return CSVersion._version == 2; };
     isCS     = function()  { return CSVersion._version == 1; };
     
-    //
-    // psx works as a namespace for commonly used functions
-    //
-    psx = function() {};
-    
-    //
-    // Description: Should the PS locale be used to determine the
-    //              decimal point or should the OS locale be used.
-    //              PS uses the OS locale so scripts may not match
-    //              the PS UI.
-    //
-    psx.USE_PS_LOCALE_FOR_DECIMAL_PT = true;
-    
-    // 
-    // Function: determineDecimalPoint
-    // Description: determine what to use for the decimal point
-    // Input:  <none>
-    // Return: a locale-specific decimal point
-    //
-    // Note: Currently there is no way to determine what decimal
-    //       point is being used in the PS UI so this always returns
-    //       the decimal point for the PS locale
-    //
-    psx.determineDecimalPoint = function() {
-    //   if (psx.USE_PS_LOCALE_FOR_DECIMAL_PT) {
-        psx.decimalPoint = $.decimalPoint;
-    //   }
-      return psx.decimalPoint;
-    };
-    psx.determineDecimalPoint();
-
-    
-    psxui = function() {}
-    
-    // XXX - Need to check to see if decimalPoint is a special RegEx character
-    // that needs to be escaped. Currently, we only handle '.'
-    psxui.dpREStr = (psx.decimalPoint == '.' ? "\\." : psx.decimalPoint);
-
-
 
     // EOF EXTRACT from psx.jsx;
     
@@ -951,94 +912,6 @@
     // EOF EXTRACT from stdlib.js
 
 
-    // ContactSheetII.jsx
-    
-    //
-    // ContactSheetUI - Named Function
-    //
-    ContactSheetUI = function ContactSheetUI(obj) {
-      
-    };
-    
-    //
-    // Function: handleEnterKey
-    // Description: This function eats Enter keys in edittext widgets
-    //              The onChange callback is temporarily disabled so
-    //              that it does not get called if the function throws
-    //              up an alert which would cause another onChange
-    //              event to get fired because of the loss of focus
-    //  Input: event - a UI event
-    //  Return: <none>
-    //
-    ContactSheetUI.handleEnterKey = function(event) {
-      var obj = event.currentTarget;
-    
-      if (event.keyName == 'Enter') {
-        if (obj.onChange) {
-          obj._ftn = obj.onChange;
-          obj.onChange = undefined;
-          var res = obj._ftn();
-          obj.onChange = obj._ftn;
-          obj._ftn = undefined;
-    
-          // if the field validation failed, eat the Enter key
-          if (res == false) {
-            event.stopPropagation();
-            event.preventDefault();
-    
-          } else if (res == true) {
-            // if it was valid, run the script
-    
-          } else {
-            // we didn't validate
-          }
-        }
-      }
-    };
-
-    
-    //
-    // Function: addPositiveNumberFilter
-    // Description: Adds a positive number/localized-decimal-point keystroke filter
-    // Input:  obj - UI widget
-    // Return: <none>
-    //
-    ContactSheetUI.addPositiveNumberFilter = function(obj) {
-      obj.keyFilter = RegExp("[" + psxui.dpREStr + "\\d]");
-      obj.addEventListener('keydown', ContactSheetUI.filterKey);
-    };
-    
-    //
-    // Function: filterKey
-    // Description: Keystroke event filter
-    // Input:  event - UI event
-    // Return: <none>
-    //
-    ContactSheetUI.filterKey = function(event) {
-      var obj = event.currentTarget;
-      var filter = obj.keyFilter;
-    
-      var c = Number("0x" + event.keyIdentifier.substring(2));
-      var key = String.fromCharCode(c);
-    
-      // $.writeln(event.keyName + ' : ' + key + ' : ' + filter);
-    
-      if (filter && key.match(filter)) {
-        return;
-    
-      } else if (event.keyName == 'Enter') {
-        ContactSheetUI.handleEnterKey(event);
-    
-      } else if (event.keyName.length == 1) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-    };
-
-    
-    // EOF EXTRACT from ContactSheetII.jsx
-    
-
     
     /**
      * @param{Object} opts - passed by reference
@@ -1186,8 +1059,6 @@
                 sizeEditText = selectSmallerSizeGroup.sizeEt;                
                 
             selectSmallerSizeGroup.enabled = false;
-            
-            ContactSheetUI.addPositiveNumberFilter(sizeEditText);
             
             sizeEditText.onChange = function() {
                 var size = parseInt(sizeEditText.text);
