@@ -955,7 +955,7 @@
         prepareProgress: function() {
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
-                barGroup: Group { orientation: 'row', alignment: 'left', \
+                barPanel: Panel { orientation: 'row', alignment: 'left', text: 'Progress', \
                     bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
                     }, \
                     stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
@@ -992,7 +992,7 @@
             var resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [1000, 100], margins: [15, 0, 10, 15], \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 100], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
@@ -1088,14 +1088,14 @@
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
         updateProgress: function(percent, currentDoc, force) {
-            var barGroup = this.progressWin.barGroup,
+            var barPanel = this.progressWin.barPanel,
                 infoGroup = this.progressWin.infoGroup,
                 percent = parseInt(percent, 10),
                 maxInfoLength = 62,
                 processingInfo = '';
             
-            barGroup.bar.value = percent;
-            barGroup.stPercent.text = percent + '% ';
+            barPanel.bar.value = percent;
+            barPanel.stPercent.text = percent + '% ';
             
             if (currentDoc) {
                 processingInfo = currentDoc;
