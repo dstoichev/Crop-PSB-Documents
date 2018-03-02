@@ -991,7 +991,7 @@
             var resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [1000, 100], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
