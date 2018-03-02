@@ -958,7 +958,7 @@
                 barPanel: Panel { orientation: 'row', alignment: 'left', text: 'Progress', \
                     bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
                     }, \
-                    stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
+                    stPercent: StaticText { alignment: ['right', 'center'], text: '  0% ', characters: 4, justify: 'right' } \
                 }, \
                 infoGroup: Group { orientation: 'column', alignment: 'fill', \
                                    alignChildren: 'fill', maximumSize: [1000, 40], \
