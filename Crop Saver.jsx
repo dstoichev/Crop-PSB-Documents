@@ -815,7 +815,7 @@
     Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/error.log";
     Stdlib.log.enabled = true;
     Stdlib.log.encoding = "UTF8";
-    Stdlib.log.append = false;
+    Stdlib.log.append = true;
     Stdlib.log.setFile = function(filename, encoding) {
       Stdlib.log.filename = filename;
       Stdlib.log.enabled = filename != undefined;
