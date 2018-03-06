@@ -1041,28 +1041,8 @@
                 that.browseForOutputFolder.call(that);
             };
             
-            var typeGroup = settings.outputTypeGroup;
-            typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
-                var selected = 'JPEG';
-                if (typeGroup.rbTiff.value) {
-                    selected = 'TIFF';
-                }
-                that.opts.outputImageType = selected;
-            };
-            
-            var smallSizeGroup = settings.smallSizeGroup;
-            smallSizeGroup.chb.onClick = function() {
-                if (smallSizeGroup.chb.value) {
-                    that.opts.wantSmallSize = true;
-                    smallSizeGroup.selectSmallerSizeGroup.enabled = true;
-                }
-                else {
-                    that.opts.wantSmallSize = false;
-                    smallSizeGroup.selectSmallerSizeGroup.enabled = false;
-                }
-            };
-            
-            var selectSmallerSizeGroup = smallSizeGroup.selectSmallerSizeGroup,
+            var smallSizeGroup = settings.smallSizeGroup,
+                selectSmallerSizeGroup = smallSizeGroup.selectSmallerSizeGroup,
                 sizeEditText = selectSmallerSizeGroup.sizeEt;                
                 
             selectSmallerSizeGroup.enabled = false;
@@ -1075,6 +1055,38 @@
                     alert('A size must be a positive integer.');
                 }
                 that.opts.smallSizeOutputImageLongerSide = size;
+            };
+                        
+            smallSizeGroup.chb.onClick = function() {
+                if (smallSizeGroup.chb.value) {
+                    that.opts.wantSmallSize = true;
+                    selectSmallerSizeGroup.enabled = true;
+                }
+                else {
+                    that.opts.wantSmallSize = false;
+                    selectSmallerSizeGroup.enabled = false;
+                }
+            };
+            
+            var typeGroup = settings.outputTypeGroup;
+            typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
+                var selected = 'JPEG';
+                if (typeGroup.rbTiff.value) {
+                    // We do not want small size images with TIFF
+                    selectSmallerSizeGroup.enabled = false;
+                    smallSizeGroup.enabled = false;
+                    
+                    selected = 'TIFF';
+                }
+                else {
+                    // Restore
+                    smallSizeGroup.enabled = true;
+                    if (smallSizeGroup.chb.value) {
+                        that.opts.wantSmallSize = true;
+                        selectSmallerSizeGroup.enabled = true;
+                    }
+                }
+                that.opts.outputImageType = selected;
             };
             
             var buttonGroup = this.preferencesWin.btnGrp;
@@ -1394,7 +1406,7 @@
                 result = false;
             }
             
-            if (this.opts.wantSmallSize) {
+            if (this.opts.wantSmallSize && 'JPEG' === this.opts.outputImageType) {
                 if (! this.saveSmall(currentActive, saveName)) {
                     result = false;
                 }
