@@ -1139,12 +1139,20 @@
     }
     
     CropSaver.prototype = {
-        addWarningToAlertText: function(docName, msg) {
+        addWarningToAlertText: function(docName, msg, isUserCancelled) {
             if (-1 !== this.alertText.indexOf(docName)) {
                 docName = '         ';
             }
-            this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
-            this.alertTextHasWarnings = true;
+            
+            var warningPrefix = ' - Waring: ';
+            if (isUserCancelled) {
+                // no need to log error and direct user to error log file
+                var warningPrefix = ' - ';
+            }
+            else {
+                this.alertTextHasWarnings = true;
+            }
+            this.alertText = ''.concat(this.alertText, docName, warningPrefix, msg, this.okTextlineFeed);            
         },
         
         /**
@@ -1248,16 +1256,21 @@
                     this.checkCancelledByClient();
                 }
             } catch (e) {
+                app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
+                Stdlib.revertToSnapshot(doc, snapshotName);
+                
                 var msgToLog = '',
                     msgForUser = 'A problem occurred.';
                 if (this.cancelledByClientMessage === e.message) {
-                    msgToLog = 'Script execution was cancelled by User.';
+                    // no need to log error and direct user to error log file
                     msgForUser = 'You cancelled Crop Saver execution.';
+                    var isUserCancelled = true;
+                    this.addWarningToAlertText(doc.name, msgForUser, isUserCancelled);
                 }
-                this.addWarningToAlertText(doc.name, msgForUser);
-                app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
-                Stdlib.revertToSnapshot(doc, snapshotName);
-                Stdlib.logException(e, msgToLog, false);
+                else {
+                    this.addWarningToAlertText(doc.name, msgForUser);
+                    Stdlib.logException(e, msgToLog, false);
+                }
             }
             
             this.ui.closeProgress();
