@@ -719,26 +719,29 @@
     Folder.prototype.toUIString = function() {
       return decodeURI(this.fsName);
     };
-
+    
+    Stdlib.PREFERENCES_FOLDER = null;
 
     Stdlib._getPreferencesFolder = function() {
-        var desktop = Folder.desktop;
+        if (! Stdlib.PREFERENCES_FOLDER) {
+            var desktop = Folder.desktop;
       
-        if (!desktop || !desktop.exists) {
-          desktop = Folder("~");
+            if (!desktop || !desktop.exists) {
+              desktop = Folder("~");
+            }
+          
+            var folder = new Folder(desktop + "/CropSaverLog");
+          
+            if (!folder.exists) {
+              folder.create();
+            }
+            
+            Stdlib.PREFERENCES_FOLDER = folder;
         }
-      
-        var folder = new Folder(desktop + "/CropSaverLog");
-      
-        if (!folder.exists) {
-          folder.create();
-        }
-      
-        return folder;
+        
+        return Stdlib.PREFERENCES_FOLDER;
     };
       
-    Stdlib.PREFERENCES_FOLDER = Stdlib._getPreferencesFolder();
-    
     //
     // Write a message out to the default log file.
     // Prefer UTF8 encoding.
@@ -752,7 +755,7 @@
       }
     
       if (!Stdlib.log.filename) {
-        return;
+        Stdlib.log.filename = Stdlib._getPreferencesFolder() + "/error.log";;
       }
     
     //   if (Stdlib.log.filename.endsWith(".ini")) {
@@ -812,7 +815,7 @@
     
       file.close();
     };
-    Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/error.log";
+    Stdlib.log.filename = null;
     Stdlib.log.enabled = true;
     Stdlib.log.encoding = "UTF8";
     Stdlib.log.append = true;
