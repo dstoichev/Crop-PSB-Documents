@@ -955,15 +955,18 @@
         prepareProgress: function() {
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
-                barPanel: Panel { orientation: 'row', alignment: 'left', text: 'Progress', \
-                    bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
+                progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], \
+                    st: StaticText { alignment: 'left', text: 'Total progress:' }, \
+                    barGroup: Group { orientation: 'row', alignment: 'left', \
+                        bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
+                        }, \
+                        stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                     }, \
-                    stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
                 }, \
                 infoGroup: Group { orientation: 'column', alignment: 'fill', \
                                    alignChildren: 'fill', maximumSize: [1000, 40], \
-                    stDoc: StaticText { text: ' ', properties: {multiline: true} }, \
-                    stWarn: StaticText { text: 'Please do not make changes to current document !' } \
+                    stWarn: StaticText { text: 'Current document:' } \
+                    stDoc: StaticText { text: ' ' } \
                 }, \
                 btnGrp: Group { orientation:'row', alignment: 'right', \
                     cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
@@ -1087,21 +1090,21 @@
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
         updateProgress: function(percent, currentDoc, force) {
-            var barPanel = this.progressWin.barPanel,
+            var barGroup = this.progressWin.progressGroup.barGroup,
                 infoGroup = this.progressWin.infoGroup,
                 percent = parseInt(percent, 10),
                 maxInfoLength = 62,
-                processingInfo = '';
+                currentlyProcessing = '';
             
-            barPanel.bar.value = percent;
-            barPanel.stPercent.text = percent + '% ';
+            barGroup.bar.value = percent;
+            barGroup.stPercent.text = percent + '% ';
             
             if (currentDoc) {
-                processingInfo = currentDoc;
+                currentlyProcessing = currentDoc;
                 if (maxInfoLength < currentDoc.length) {
-                    processingInfo = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                    currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
                 }
-                infoGroup.stDoc.text = processingInfo;
+                infoGroup.stDoc.text = currentlyProcessing;
             }
             
             var d = new ActionDescriptor();
@@ -1234,7 +1237,7 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     
-                    this.ui.updateProgress( percentComplete, 'Processing: ' + doc.name );
+                    this.ui.updateProgress( percentComplete, doc.name );
                     
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
