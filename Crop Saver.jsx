@@ -1110,9 +1110,14 @@
                 infoGroup.stDoc.text = currentlyProcessing;
             }
             
-            var d = new ActionDescriptor();
-            d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
-            app.executeAction(sTID('wait'), d, DialogModes.NO);
+            if (isMac()) {
+                this.progressWin.update();
+            }
+            else {
+                var d = new ActionDescriptor();
+                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+                app.executeAction(sTID('wait'), d, DialogModes.NO);
+            }
         }
     };
 
