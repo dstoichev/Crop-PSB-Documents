@@ -994,10 +994,11 @@
             // Define the resource specification string,
             // which specifies all of the components for the 
             // Image Saving Preferences dialog.
-            var resource =
+            var maxNotePanelHeight = (isMac()) ? 100 : 90,
+                resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 90], margins: [15, 0, 10, 15], \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, "+maxNotePanelHeight+"], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
