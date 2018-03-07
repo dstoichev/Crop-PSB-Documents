@@ -917,34 +917,36 @@
     
     
     CropSaverProgressIndicator = function CropSaverProgressIndicator() {
-        var progressWin = null,
-            isCancelledByClient = false,
+        var that = this,
             resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }";
-       alert('opa');     
-            progressWin = new Window(resource);
+       
+            this.win = null;
+            this.isCancelledByClient = false;
             
-            progressWin.btnGrp.cancelBtn.onClick = function() {
-                isCancelledByClient = true;
-                progressWin.close(-1);
+            this.win = new Window(resource);
+            
+            this.win.btnGrp.cancelBtn.onClick = function() {
+                that.isCancelledByClient = true;
+                that.win.close(-1);
             };
             
-            progressWin.center();
+            that.win.center();
                     
         return {
             close: function() {
-                progressWin.close(0);
+                that.win.close(0);
             },
             
             show: function() {
-                progressWin.show();
+                that.win.show();
             },
             
             /**
              * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
              */
             updateProgress: function(percent, currentDoc) {
-                var barGroup = progressWin.progressGroup.barGroup,
-                    infoGroup = progressWin.infoGroup,
+                var barGroup = that.win.progressGroup.barGroup,
+                    infoGroup = that.win.infoGroup,
                     percent = parseInt(percent, 10),
                     maxInfoLength = 62,
                     currentlyProcessing = '';
@@ -966,12 +968,12 @@
                     app.executeAction(app.stringIDToTypeID('wait'), d, DialogModes.NO);
                 }
                 else {
-                    progressWin.update();                    
+                    that.win.update();                    
                 }
             },
             
             wasCancelledByClient: function() {
-                return isCancelledByClient;
+                return that.isCancelledByClient;
             }
         };
     };
@@ -1015,8 +1017,6 @@
             
             // send the message
             bt.send();
-            
-            $.sleep(1000);
         },
         
         show: function() {
