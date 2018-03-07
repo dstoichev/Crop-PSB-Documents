@@ -913,6 +913,65 @@
 
     
     // EOF EXTRACT from stdlib.js
+    
+    
+    
+    CropSaverProgressIndicator = function CropSaverProgressIndicator() {
+        var progressWin = null,
+            isCancelledByClient = false,
+            resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }";
+            
+            progressWin = new Window(resource);
+            
+            progressWin.btnGrp.cancelBtn.onClick = function() {
+                isCancelledByClient = true;
+                progressWin.close(-1);
+            };
+            
+            progressWin.center();
+                    
+        return {
+            close: function() {
+                progressWin.close(0);
+            },
+            
+            show: function() {
+                progressWin.show();
+            },
+            
+            updateProgress: function(percent, currentDoc) {
+                var barGroup = progressWin.progressGroup.barGroup,
+                    infoGroup = progressWin.infoGroup,
+                    percent = parseInt(percent, 10),
+                    maxInfoLength = 62,
+                    currentlyProcessing = '';
+                
+                barGroup.bar.value = percent;
+                barGroup.stPercent.text = percent + '% ';
+                
+                if (currentDoc) {
+                    currentlyProcessing = currentDoc;
+                    if (maxInfoLength < currentDoc.length) {
+                        currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                    }
+                    infoGroup.stDoc.text = currentlyProcessing;
+                }
+                
+                if ( $.os.match(/windows/i) ) {
+                    var d = new ActionDescriptor();
+                    d.putEnumerated(app.stringIDToTypeID('state'), app.stringIDToTypeID('state'), app.stringIDToTypeID('redrawComplete'));
+                    app.executeAction(app.stringIDToTypeID('wait'), d, DialogModes.NO);
+                }
+                else {
+                    progressWin.update();                    
+                }
+            },
+            
+            wasCancelledByClient: function() {
+                return isCancelledByClient;
+            }
+        };
+    };
 
 
     
@@ -948,45 +1007,40 @@
         },
         
         closeProgress: function() {
-            this.progressWin.close(0);
+            if (this.progressWin) {
+                this.progressWin.close();
+            }            
         },
         
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
         
+        isCancelledByClient: function() {
+            return ( this.progressWin && this.progressWin.wasCancelledByClient() );
+        },
+        
         prepareProgress: function() {
-            var resource =
-            "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
-                progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], \
-                    st: StaticText { alignment: 'left', text: 'Total progress:' }, \
-                    barGroup: Group { orientation: 'row', alignment: 'left', \
-                        bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
-                        }, \
-                        stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
-                    }, \
-                }, \
-                infoGroup: Group { orientation: 'column', alignment: 'fill', \
-                                   alignChildren: 'fill', maximumSize: [1000, 40], \
-                    stWarn: StaticText { text: 'Current document:' } \
-                    stDoc: StaticText { text: ' ' } \
-                }, \
-                btnGrp: Group { orientation:'row', alignment: 'right', \
-                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
-                } \
-            }";
+            var bt = new BridgeTalk,
+                message = ''.concat(CropSaverProgressIndicator.toString(), "\n", "var cspi = CropSaverProgressIndicator();", "\n", "cspi.toSource();"),
+                that = this;
+                
+            bt.target = "photoshop";
+                        
+            // the script passed to the target application
+            // returns the object using "toSource"
+            bt.body = message;
             
-            this.progressWin = new Window(resource);
+            // For the result, use eval to reconstruct the object
+            bt.onResult = function(resObj) {
+                that.progressWin = bt.result = eval(resObj.body);
+                that.progressWin.show();
+            }
             
-            var that = this;
-            this.progressWin.btnGrp.cancelBtn.onClick = function() {
-                that.opts.isCancelledByClient = true;
-                that.progressWin.close(-1);
-            };
+            // send the message
+            bt.send();
             
-            this.progressWin.center();
-            
-            return this.progressWin;
+            $.sleep(1000);
         },
         
         prepareWindow: function() {
@@ -1105,31 +1159,9 @@
         /**
          * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
          */
-        updateProgress: function(percent, currentDoc, force) {
-            var barGroup = this.progressWin.progressGroup.barGroup,
-                infoGroup = this.progressWin.infoGroup,
-                percent = parseInt(percent, 10),
-                maxInfoLength = 62,
-                currentlyProcessing = '';
-            
-            barGroup.bar.value = percent;
-            barGroup.stPercent.text = percent + '% ';
-            
-            if (currentDoc) {
-                currentlyProcessing = currentDoc;
-                if (maxInfoLength < currentDoc.length) {
-                    currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
-                }
-                infoGroup.stDoc.text = currentlyProcessing;
-            }
-            
-            if (isMac()) {
-                this.progressWin.update();
-            }
-            else {
-                var d = new ActionDescriptor();
-                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
-                app.executeAction(sTID('wait'), d, DialogModes.NO);
+        updateProgress: function(percent, currentDoc) {
+            if (this.progressWin) {
+                this.progressWin.updateProgress(percent, currentDoc);
             }
         }
     };
@@ -1144,7 +1176,6 @@
         this.cropLayerName = 'CROP';
         
         this.opts = {
-            isCancelledByClient: false,
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
@@ -1186,7 +1217,7 @@
         checkCancelledByClient: function(returnBoolean) {
             var result = false;
             
-            if (this.opts.isCancelledByClient) {
+            if (this.ui.isCancelledByClient()) {
                 if (! returnBoolean) {
                     throw new Error(this.cancelledByClientMessage);
                 }
@@ -1246,7 +1277,7 @@
         
         main: function() {
             this.initPreferences();
-            
+                        
             var docs = app.documents,
                 docsCount = docs.length,
                 currentActive = app.activeDocument,                
@@ -1255,9 +1286,8 @@
                 doc, start, snapshotName, progressWin;
             
             try {
-                progressWin = this.ui.prepareProgress();
-                progressWin.show();
-                
+                this.ui.prepareProgress();
+            
                 for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
@@ -1539,8 +1569,8 @@
     
     
     if (documents.length) {
-        var cs = new CropSaver();
-        cs.init();
+        var cropSaver = new CropSaver();
+        cropSaver.init();
     }
     else {
         alert("Open one or more documents before running this script.");
