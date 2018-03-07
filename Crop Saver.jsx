@@ -920,7 +920,7 @@
         var progressWin = null,
             isCancelledByClient = false,
             resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }";
-            
+       alert('opa');     
             progressWin = new Window(resource);
             
             progressWin.btnGrp.cancelBtn.onClick = function() {
@@ -1009,13 +1009,20 @@
             // For the result, use eval to reconstruct the object
             bt.onResult = function(resObj) {
                 that.progressWin = bt.result = eval(resObj.body);
-                that.progressWin.show();
+                var cropSaver = new CropSaver(that);
+                cropSaver.init();
             }
             
             // send the message
             bt.send();
             
             $.sleep(1000);
+        },
+        
+        show: function() {
+            if (this.progressWin) {
+                this.progressWin.show();
+            }            
         },
                 
         updateProgress: function(percent, currentDoc) {
@@ -1300,6 +1307,8 @@
                 doc, start, snapshotName, progressWin;
             
             try {
+                this.progressUi.show();
+                
                 for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
@@ -1581,9 +1590,7 @@
     
     
     if (documents.length) {
-        var csProgress = new CropSaverProgressIndicationUi(),
-            cropSaver = new CropSaver(csProgress);
-        cropSaver.init();
+        var csProgress = new CropSaverProgressIndicationUi();            
     }
     else {
         alert("Open one or more documents before running this script.");
