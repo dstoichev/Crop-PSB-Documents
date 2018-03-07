@@ -939,6 +939,9 @@
                 progressWin.show();
             },
             
+            /**
+             * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+             */
             updateProgress: function(percent, currentDoc) {
                 var barGroup = progressWin.progressGroup.barGroup,
                     infoGroup = progressWin.infoGroup,
@@ -972,6 +975,55 @@
             }
         };
     };
+    
+    
+    CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
+        this.progressWin = null;
+        this.prepareProgress();
+    };
+    
+    CropSaverProgressIndicationUi.prototype = {
+        closeProgress: function() {
+            if (this.progressWin) {
+                this.progressWin.close();
+            }            
+        },
+        
+        isCancelledByClient: function() {
+            return ( this.progressWin && this.progressWin.wasCancelledByClient() );
+        },
+                
+        prepareProgress: function() {
+            var bt = new BridgeTalk,
+                message = ''.concat(CropSaverProgressIndicator.toString(), "\n",
+                                    "var cspi = CropSaverProgressIndicator();", "\n",
+                                    "cspi.toSource();"),
+                that = this;
+                
+            bt.target = "photoshop";
+                        
+            // the script passed to the target application
+            // returns the object using "toSource"
+            bt.body = message;
+            
+            // For the result, use eval to reconstruct the object
+            bt.onResult = function(resObj) {
+                that.progressWin = bt.result = eval(resObj.body);
+                that.progressWin.show();
+            }
+            
+            // send the message
+            bt.send();
+            
+            $.sleep(1000);
+        },
+                
+        updateProgress: function(percent, currentDoc) {
+            if (this.progressWin) {
+                this.progressWin.updateProgress(percent, currentDoc);
+            }
+        }
+    };
 
 
     
@@ -992,7 +1044,6 @@
         this.title = 'Image Saving Preferences';
         
         this.preferencesWin = null;
-        this.progressWin = null;
     }
 
     CropSaverUi.prototype = {
@@ -1006,43 +1057,10 @@
             }
         },
         
-        closeProgress: function() {
-            if (this.progressWin) {
-                this.progressWin.close();
-            }            
-        },
-        
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
-        
-        isCancelledByClient: function() {
-            return ( this.progressWin && this.progressWin.wasCancelledByClient() );
-        },
-        
-        prepareProgress: function() {
-            var bt = new BridgeTalk,
-                message = ''.concat(CropSaverProgressIndicator.toString(), "\n", "var cspi = CropSaverProgressIndicator();", "\n", "cspi.toSource();"),
-                that = this;
                 
-            bt.target = "photoshop";
-                        
-            // the script passed to the target application
-            // returns the object using "toSource"
-            bt.body = message;
-            
-            // For the result, use eval to reconstruct the object
-            bt.onResult = function(resObj) {
-                that.progressWin = bt.result = eval(resObj.body);
-                that.progressWin.show();
-            }
-            
-            // send the message
-            bt.send();
-            
-            $.sleep(1000);
-        },
-        
         prepareWindow: function() {
             var that = this;
             // Define the resource specification string,
@@ -1154,20 +1172,13 @@
             this.preferencesWin.center();
             
             return this.preferencesWin;
-        },
-        
-        /**
-         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
-         */
-        updateProgress: function(percent, currentDoc) {
-            if (this.progressWin) {
-                this.progressWin.updateProgress(percent, currentDoc);
-            }
         }
     };
 
-    
-    CropSaver = function() {
+    /**
+     * @param {CropSaverProgressIndicationUi} progressIndicatorUi
+     */
+    CropSaver = function(progressIndicatorUi) {
         this.alertText = ''.concat('Processed documents:', "\n\n");
         this.alertTextHasWarnings = false;
         
@@ -1185,6 +1196,9 @@
         this.okTextlineFeed = "\n";
         
         this.outputFileExtension = '';
+        
+        this.progressUi = progressIndicatorUi;
+        
         this.saveOptions = null;
         
         this.ui = null;
@@ -1217,7 +1231,7 @@
         checkCancelledByClient: function(returnBoolean) {
             var result = false;
             
-            if (this.ui.isCancelledByClient()) {
+            if (this.progressUi.isCancelledByClient()) {
                 if (! returnBoolean) {
                     throw new Error(this.cancelledByClientMessage);
                 }
@@ -1286,8 +1300,6 @@
                 doc, start, snapshotName, progressWin;
             
             try {
-                this.ui.prepareProgress();
-            
                 for (var i = 0; i < docsCount; i++)
                 {
                     doc = docs[i];
@@ -1296,13 +1308,13 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     
-                    this.ui.updateProgress( percentComplete, doc.name );
+                    this.progressUi.updateProgress( percentComplete, doc.name );
                     
                     this.processDocument(doc);
                     Stdlib.revertToSnapshot(doc, snapshotName);
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
-                    this.ui.updateProgress( percentComplete );
+                    this.progressUi.updateProgress( percentComplete );
                                                             
                     this.checkCancelledByClient();
                 }
@@ -1324,7 +1336,7 @@
                 }
             }
             
-            this.ui.closeProgress();
+            this.progressUi.closeProgress();
             
             app.activeDocument = currentActive;
             
@@ -1569,7 +1581,8 @@
     
     
     if (documents.length) {
-        var cropSaver = new CropSaver();
+        var csProgress = new CropSaverProgressIndicationUi(),
+            cropSaver = new CropSaver(csProgress);
         cropSaver.init();
     }
     else {
