@@ -916,37 +916,87 @@
     
     
     
+    $.global["CsProgressIndicator"] = 0;
     CropSaverProgressIndicator = function CropSaverProgressIndicator() {
-        var that = this,
-            resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }";
+        var resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }",
+            win = new Window(resource);
        
-            this.win = null;
-            this.isCancelledByClient = false;
+        win.isCancelledByClient = false;
+        
+        win.btnGrp.cancelBtn.onClick = function() {
+            win.isCancelledByClient = true;
+            win.close(-1);
+        };
+        
+        $.global["CsProgressIndicator"] = win;
+        
+        return win;
+    };
+    
+    
+    CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
+        this.progressWin = null;
+        this.prepareProgress();
+    };
+    
+    CropSaverProgressIndicationUi.prototype = {
+        closeProgress: function() {
+            if (this.progressWin) {
+                this.progressWin.close(0);
+            }            
+        },
+        
+        isCancelledByClient: function() {
+            return ( this.progressWin && this.progressWin.isCancelledByClient );
+        },
+        
+        prepareProgress: function() {
+            var bt = new BridgeTalk,
+                message = ''.concat(CropSaverProgressIndicator.toString(), "\n",
+                                    "var cspi = CropSaverProgressIndicator();", "\n",
+                                    "cspi.toSource();"),
+                that = this;
+                
+            bt.target = "photoshop";
+                        
+            // the script passed to the target application
+            // returns the object using "toSource"
+            bt.body = message;
             
-            this.win = new Window(resource);
+            // For the result, use eval to reconstruct the object
+            bt.onResult = function(resObj) {
+                alert(typeof $.global["CsProgressIndicator"]);
+                that.progressWin = $.global["CsProgressIndicator"];                
+                /*
+                var cropSaver = new CropSaver(that);
+                cropSaver.init();
+                */
+                that.show();
+            }
             
-            this.win.btnGrp.cancelBtn.onClick = function() {
-                that.isCancelledByClient = true;
-                that.win.close(-1);
-            };
+            bt.onError = function(errObj) {
+                alert(errObj.body);
+                throw new Error(errObj.body);s
+            }
             
-            that.win.center();
-                    
-        return {
-            close: function() {
-                that.win.close(0);
-            },
-            
-            show: function() {
-                that.win.show();
-            },
-            
-            /**
-             * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
-             */
-            updateProgress: function(percent, currentDoc) {
-                var barGroup = that.win.progressGroup.barGroup,
-                    infoGroup = that.win.infoGroup,
+            // send the message
+            bt.send();
+        },
+        
+        show: function() {
+            if (this.progressWin) {
+                this.progressWin.center();
+                this.progressWin.show();
+            }            
+        },
+        
+        /**
+         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+         */        
+        updateProgress: function(percent, currentDoc) {
+            if (this.progressWin) {
+                var barGroup = this.progressWin.progressGroup.barGroup,
+                    infoGroup = this.progressWin.infoGroup,
                     percent = parseInt(percent, 10),
                     maxInfoLength = 62,
                     currentlyProcessing = '';
@@ -968,66 +1018,8 @@
                     app.executeAction(app.stringIDToTypeID('wait'), d, DialogModes.NO);
                 }
                 else {
-                    that.win.update();                    
+                    this.progressWin.update();                    
                 }
-            },
-            
-            wasCancelledByClient: function() {
-                return that.isCancelledByClient;
-            }
-        };
-    };
-    
-    
-    CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
-        this.progressWin = null;
-        this.prepareProgress();
-    };
-    
-    CropSaverProgressIndicationUi.prototype = {
-        closeProgress: function() {
-            if (this.progressWin) {
-                this.progressWin.close();
-            }            
-        },
-        
-        isCancelledByClient: function() {
-            return ( this.progressWin && this.progressWin.wasCancelledByClient() );
-        },
-                
-        prepareProgress: function() {
-            var bt = new BridgeTalk,
-                message = ''.concat(CropSaverProgressIndicator.toString(), "\n",
-                                    "var cspi = CropSaverProgressIndicator();", "\n",
-                                    "cspi.toSource();"),
-                that = this;
-                
-            bt.target = "photoshop";
-                        
-            // the script passed to the target application
-            // returns the object using "toSource"
-            bt.body = message;
-            
-            // For the result, use eval to reconstruct the object
-            bt.onResult = function(resObj) {
-                that.progressWin = bt.result = eval(resObj.body);
-                var cropSaver = new CropSaver(that);
-                cropSaver.init();
-            }
-            
-            // send the message
-            bt.send();
-        },
-        
-        show: function() {
-            if (this.progressWin) {
-                this.progressWin.show();
-            }            
-        },
-                
-        updateProgress: function(percent, currentDoc) {
-            if (this.progressWin) {
-                this.progressWin.updateProgress(percent, currentDoc);
             }
         }
     };
