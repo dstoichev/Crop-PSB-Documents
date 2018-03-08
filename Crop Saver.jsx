@@ -916,7 +916,6 @@
     
     
     
-    $.global["CsProgressIndicator"] = 0;
     CropSaverProgressIndicator = function CropSaverProgressIndicator() {
         var resource = "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], st: StaticText { alignment: 'left', text: 'Total progress:' }, barGroup: Group { orientation: 'row', alignment: 'left', bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] }, stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } }, }, infoGroup: Group { orientation: 'column', alignment: 'fill', alignChildren: 'fill', maximumSize: [1000, 40], stWarn: StaticText { text: 'Current document:' } stDoc: StaticText { text: ' ' } }, btnGrp: Group { orientation:'row', alignment: 'right', cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } } }",
             win = new Window(resource);
@@ -928,7 +927,7 @@
             win.close(-1);
         };
         
-        $.global["CsProgressIndicator"] = win;
+        var a = win.center, b = win.show, c = win.close, d = win.isCancelledByClient;
         
         return win;
     };
@@ -965,8 +964,8 @@
             
             // For the result, use eval to reconstruct the object
             bt.onResult = function(resObj) {
-                alert(typeof $.global["CsProgressIndicator"]);
-                that.progressWin = $.global["CsProgressIndicator"];                
+                alert(resObj.body);
+                that.progressWin = eval(resObj.body);                
                 /*
                 var cropSaver = new CropSaver(that);
                 cropSaver.init();
