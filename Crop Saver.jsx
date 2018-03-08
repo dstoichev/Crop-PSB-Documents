@@ -913,46 +913,23 @@
 
     
     // EOF EXTRACT from stdlib.js
-
-
     
-    /**
-     * @param{Object} opts - passed by reference
-     */
-    CropSaverUi = function(opts) {
-        this.bounds = "x: 200, y: 200, width: 650, height: 420";
-        
-        this.docNote = ''.concat("\n", 'Processes all documents currently OPEN in Photoshop.', "\n\n",
-                                 'Saves an image cropped via the CROP layer ',
-                                  'when this layer exists and an image AS IS when the layer is absent.');
-        
-        this.opts = opts;
-        
-        this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
-        
-        this.title = 'Image Saving Preferences';
-        
-        this.preferencesWin = null;
+    
+    
+    CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
+        this.isCancelledByClient = false;
         this.progressWin = null;
-    }
-
-    CropSaverUi.prototype = {
-        browseForOutputFolder: function() {
-            var def = this.opts.outputResultsDestinationPath || Folder.current;
-      
-            var folder = Stdlib.selectFolder("Select destination folder", def);
-            if (folder) {
-                this.preferencesWin.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
-                this.opts.outputResultsDestinationPath = folder.fsName;
-            }
-        },
         
+        this.prepareProgress();
+    };
+    
+    CropSaverProgressIndicationUi.prototype = {
         closeProgress: function() {
             this.progressWin.close(0);
         },
         
-        escapePath: function(path) {
-            return isWindows() ? path.replace(/\\/g, '\\\\') : path;
+        isCancelledByClient: function() {
+            return this.isCancelledByClient;
         },
         
         prepareProgress: function() {
@@ -980,15 +957,86 @@
             
             var that = this;
             this.progressWin.btnGrp.cancelBtn.onClick = function() {
-                that.opts.isCancelledByClient = true;
+                that.isCancelledByClient = true;
                 that.progressWin.close(-1);
             };
             
             this.progressWin.center();
-            
-            return this.progressWin;
+            this.progressWin.show();
         },
         
+        /**
+         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+         *
+         * @param {Number} percent
+         * @param {String} currentDoc
+         */
+        updateProgress: function(percent, currentDoc) {
+            var barGroup = this.progressWin.progressGroup.barGroup,
+                infoGroup = this.progressWin.infoGroup,
+                percent = parseInt(percent, 10),
+                maxInfoLength = 62,
+                currentlyProcessing = '';
+            
+            barGroup.bar.value = percent;
+            barGroup.stPercent.text = percent + '% ';
+            
+            if (currentDoc) {
+                currentlyProcessing = currentDoc;
+                if (maxInfoLength < currentDoc.length) {
+                    currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                }
+                infoGroup.stDoc.text = currentlyProcessing;
+            }
+            
+            if (isMac()) {
+                this.progressWin.update();
+            }
+            else {
+                var d = new ActionDescriptor();
+                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+                app.executeAction(sTID('wait'), d, DialogModes.NO);
+            }
+        }
+    };
+
+
+
+    
+    /**
+     * @param{Object} opts - passed by reference
+     */
+    CropSaverUi = function(opts) {
+        this.bounds = "x: 200, y: 200, width: 650, height: 420";
+        
+        this.docNote = ''.concat("\n", 'Processes all documents currently OPEN in Photoshop.', "\n\n",
+                                 'Saves an image cropped via the CROP layer ',
+                                  'when this layer exists and an image AS IS when the layer is absent.');
+        
+        this.opts = opts;
+        
+        this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
+        
+        this.title = 'Image Saving Preferences';
+        
+        this.preferencesWin = null;        
+    }
+
+    CropSaverUi.prototype = {
+        browseForOutputFolder: function() {
+            var def = this.opts.outputResultsDestinationPath || Folder.current;
+      
+            var folder = Stdlib.selectFolder("Select destination folder", def);
+            if (folder) {
+                this.preferencesWin.settingsPnl.outputFolderGroup.outputFolder.text = folder.fsName;
+                this.opts.outputResultsDestinationPath = folder.fsName;
+            }
+        },
+                
+        escapePath: function(path) {
+            return isWindows() ? path.replace(/\\/g, '\\\\') : path;
+        },
+                
         prepareWindow: function() {
             var that = this;
             // Define the resource specification string,
@@ -1100,37 +1148,6 @@
             this.preferencesWin.center();
             
             return this.preferencesWin;
-        },
-        
-        /**
-         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
-         */
-        updateProgress: function(percent, currentDoc, force) {
-            var barGroup = this.progressWin.progressGroup.barGroup,
-                infoGroup = this.progressWin.infoGroup,
-                percent = parseInt(percent, 10),
-                maxInfoLength = 62,
-                currentlyProcessing = '';
-            
-            barGroup.bar.value = percent;
-            barGroup.stPercent.text = percent + '% ';
-            
-            if (currentDoc) {
-                currentlyProcessing = currentDoc;
-                if (maxInfoLength < currentDoc.length) {
-                    currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
-                }
-                infoGroup.stDoc.text = currentlyProcessing;
-            }
-            
-            if (isMac()) {
-                this.progressWin.update();
-            }
-            else {
-                var d = new ActionDescriptor();
-                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
-                app.executeAction(sTID('wait'), d, DialogModes.NO);
-            }
         }
     };
 
@@ -1154,6 +1171,9 @@
         this.okTextlineFeed = "\n";
         
         this.outputFileExtension = '';
+        
+        this.progressUi = null;
+        
         this.saveOptions = null;
         
         this.ui = null;
@@ -1186,7 +1206,7 @@
         checkCancelledByClient: function(returnBoolean) {
             var result = false;
             
-            if (this.opts.isCancelledByClient) {
+            if ( this.progressUi.isCancelledByClient() ) {
                 if (! returnBoolean) {
                     throw new Error(this.cancelledByClientMessage);
                 }
@@ -1255,8 +1275,7 @@
                 doc, start, snapshotName, progressWin;
             
             try {
-                progressWin = this.ui.prepareProgress();
-                progressWin.show();
+                this.progressUi = new CropSaverProgressIndicationUi();
                 
                 for (var i = 0; i < docsCount; i++)
                 {
@@ -1266,13 +1285,14 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     
-                    this.ui.updateProgress( percentComplete, doc.name );
+                    this.progressUi.updateProgress( percentComplete, doc.name );
                     
                     this.processDocument(doc);
+                    
                     Stdlib.revertToSnapshot(doc, snapshotName);
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
-                    this.ui.updateProgress( percentComplete );
+                    this.progressUi.updateProgress( percentComplete );
                                                             
                     this.checkCancelledByClient();
                 }
@@ -1294,7 +1314,7 @@
                 }
             }
             
-            this.ui.closeProgress();
+            this.progressUi.closeProgress();
             
             app.activeDocument = currentActive;
             
