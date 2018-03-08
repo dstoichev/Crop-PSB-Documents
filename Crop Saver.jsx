@@ -1064,7 +1064,7 @@
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                     smallSizeGroup: Group{orientation: 'column', alignment: 'left',\
-                        chb: Checkbox { text: ' Create small size images, too.', alignment: ['left', 'center'] } \
+                        chb: Checkbox { text: ' Create small size JPEG images, too.', alignment: ['left', 'center'] } \
                         selectSmallerSizeGroup: Group{orientation: 'row', alignment: 'left', margins: [20, 0, 10, 0] \
                             st: StaticText { alignment: ['left', 'center'], text: 'Set long side to:' }, \
                             sizeEt: EditText { characters: 5, text: '"+this.defaultSmallSizeOutputImageLongerSide+"' }, \
