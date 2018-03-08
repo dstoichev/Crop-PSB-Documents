@@ -1120,20 +1120,9 @@
             typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
                 var selected = 'JPEG';
                 if (typeGroup.rbTiff.value) {
-                    // We do not want small size images with TIFF
-                    selectSmallerSizeGroup.enabled = false;
-                    smallSizeGroup.enabled = false;
-                    
                     selected = 'TIFF';
                 }
-                else {
-                    // Restore
-                    smallSizeGroup.enabled = true;
-                    if (smallSizeGroup.chb.value) {
-                        that.opts.wantSmallSize = true;
-                        selectSmallerSizeGroup.enabled = true;
-                    }
-                }
+                
                 that.opts.outputImageType = selected;
             };
             
@@ -1425,7 +1414,7 @@
                 result = false;
             }
             
-            if (this.opts.wantSmallSize && 'JPEG' === this.opts.outputImageType) {
+            if (this.opts.wantSmallSize) {
                 if (! this.saveSmall(currentActive, saveName)) {
                     result = false;
                 }
@@ -1441,6 +1430,8 @@
         
         /**
          * Resize so that longer side is this.opts.smallSizeOutputImageLongerSide px
+         * Always output JPEG smaller size images
+         * 
          * The idea for resizing is from xbytor's xtools ResizeImage.resize
          * Check http://ps-scripts.sourceforge.net/xtools.html
          * License: http://www.opensource.org/licenses/bsd-license.php
@@ -1454,15 +1445,19 @@
                 maxSize = this.opts.smallSizeOutputImageLongerSide,
                 width = parseInt(doc.width),
                 height = parseInt(doc.height),
+                saveOptions = new JPEGSaveOptions(),
+                outputFileExtension = '.jpg',
                 outputName, file, method, resolution;
                 
+            saveOptions.quality = 10;
+                
             if (width > height) {
-                outputName = ''.concat(saveName, '_width_', maxSize, 'px', this.outputFileExtension);
+                outputName = ''.concat(saveName, '_width_', maxSize, 'px', outputFileExtension);
                 method = (maxSize > width) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(maxSize, null, resolution, method);
             }
             else {
-                outputName = ''.concat(saveName, '_height_', maxSize, 'px', this.outputFileExtension);
+                outputName = ''.concat(saveName, '_height_', maxSize, 'px', outputFileExtension);
                 method = (maxSize > height) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(null, maxSize, resolution, method);
             }
@@ -1470,7 +1465,7 @@
             file = new File(this.opts.outputResultsDestinationPath + '/' + outputName);
             
             try {
-                doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+                doc.saveAs(file, saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
                 var warnText = 'Failed to save small output image',
                     msg = ''.concat('File save error: ', e.message, "\n", warnText, ': ', file.toUIString(), "\n");
