@@ -927,11 +927,7 @@
         closeProgress: function() {
             this.progressWin.close(0);
         },
-        
-        isCancelledByClient: function() {
-            return this.isCancelledByClient;
-        },
-        
+                
         prepareProgress: function() {
             var resource =
             "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
@@ -997,6 +993,10 @@
                 d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
                 app.executeAction(sTID('wait'), d, DialogModes.NO);
             }
+        },
+        
+        wasCancelledByClient: function() {
+            return this.isCancelledByClient;
         }
     };
 
@@ -1161,7 +1161,6 @@
         this.cropLayerName = 'CROP';
         
         this.opts = {
-            isCancelledByClient: false,
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
@@ -1206,7 +1205,7 @@
         checkCancelledByClient: function(returnBoolean) {
             var result = false;
             
-            if ( this.progressUi.isCancelledByClient() ) {
+            if ( this.progressUi.wasCancelledByClient() ) {
                 if (! returnBoolean) {
                     throw new Error(this.cancelledByClientMessage);
                 }
