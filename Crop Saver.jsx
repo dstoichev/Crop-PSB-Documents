@@ -719,26 +719,29 @@
     Folder.prototype.toUIString = function() {
       return decodeURI(this.fsName);
     };
-
+    
+    Stdlib.PREFERENCES_FOLDER = null;
 
     Stdlib._getPreferencesFolder = function() {
-        var desktop = Folder.desktop;
+        if (! Stdlib.PREFERENCES_FOLDER) {
+            var desktop = Folder.desktop;
       
-        if (!desktop || !desktop.exists) {
-          desktop = Folder("~");
+            if (!desktop || !desktop.exists) {
+              desktop = Folder("~");
+            }
+          
+            var folder = new Folder(desktop + "/CropSaverLog");
+          
+            if (!folder.exists) {
+              folder.create();
+            }
+            
+            Stdlib.PREFERENCES_FOLDER = folder;
         }
-      
-        var folder = new Folder(desktop + "/CropSaverLog");
-      
-        if (!folder.exists) {
-          folder.create();
-        }
-      
-        return folder;
+        
+        return Stdlib.PREFERENCES_FOLDER;
     };
       
-    Stdlib.PREFERENCES_FOLDER = Stdlib._getPreferencesFolder();
-    
     //
     // Write a message out to the default log file.
     // Prefer UTF8 encoding.
@@ -752,7 +755,7 @@
       }
     
       if (!Stdlib.log.filename) {
-        return;
+        Stdlib.log.filename = Stdlib._getPreferencesFolder() + "/error.log";;
       }
     
     //   if (Stdlib.log.filename.endsWith(".ini")) {
@@ -812,10 +815,10 @@
     
       file.close();
     };
-    Stdlib.log.filename = Stdlib.PREFERENCES_FOLDER + "/error.log";
+    Stdlib.log.filename = null;
     Stdlib.log.enabled = true;
     Stdlib.log.encoding = "UTF8";
-    Stdlib.log.append = false;
+    Stdlib.log.append = true;
     Stdlib.log.setFile = function(filename, encoding) {
       Stdlib.log.filename = filename;
       Stdlib.log.enabled = filename != undefined;
@@ -910,6 +913,93 @@
 
     
     // EOF EXTRACT from stdlib.js
+    
+    
+    
+    CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
+        this.isCancelledByClient = false;
+        this.progressWin = null;
+        
+        this.prepareProgress();
+    };
+    
+    CropSaverProgressIndicationUi.prototype = {
+        closeProgress: function() {
+            this.progressWin.close(0);
+        },
+                
+        prepareProgress: function() {
+            var resource =
+            "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
+                progressGroup: Group { orientation:'column', alignment: 'left', margins: [0, 0, 0, 10], \
+                    st: StaticText { alignment: 'left', text: 'Total progress:' }, \
+                    barGroup: Group { orientation: 'row', alignment: 'left', \
+                        bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
+                        }, \
+                        stPercent: StaticText { alignment: ['right', 'center'], text: '000% ', characters: 4, justify: 'right' } \
+                    }, \
+                }, \
+                infoGroup: Group { orientation: 'column', alignment: 'fill', \
+                                   alignChildren: 'fill', maximumSize: [1000, 40], \
+                    stWarn: StaticText { text: 'Current document:' } \
+                    stDoc: StaticText { text: ' ' } \
+                }, \
+                btnGrp: Group { orientation:'row', alignment: 'right', \
+                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
+                } \
+            }";
+            
+            this.progressWin = new Window(resource);
+            
+            var that = this;
+            this.progressWin.btnGrp.cancelBtn.onClick = function() {
+                that.isCancelledByClient = true;
+                that.progressWin.close(-1);
+            };
+            
+            this.progressWin.center();
+            this.progressWin.show();
+        },
+        
+        /**
+         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
+         *
+         * @param {Number} percent
+         * @param {String} currentDoc
+         */
+        updateProgress: function(percent, currentDoc) {
+            var barGroup = this.progressWin.progressGroup.barGroup,
+                infoGroup = this.progressWin.infoGroup,
+                percent = parseInt(percent, 10),
+                maxInfoLength = 62,
+                currentlyProcessing = '';
+            
+            barGroup.bar.value = percent;
+            barGroup.stPercent.text = percent + '% ';
+            
+            if (currentDoc) {
+                currentlyProcessing = currentDoc;
+                if (maxInfoLength < currentDoc.length) {
+                    currentlyProcessing = currentDoc.substring(0, maxInfoLength - 3) + '...';
+                }
+                infoGroup.stDoc.text = currentlyProcessing;
+            }
+            
+            if (isMac()) {
+                this.progressWin.update();
+            }
+            else {
+                var d = new ActionDescriptor();
+                d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
+                app.executeAction(sTID('wait'), d, DialogModes.NO);
+            }
+        },
+        
+        wasCancelledByClient: function() {
+            return this.isCancelledByClient;
+        }
+    };
+
 
 
     
@@ -929,8 +1019,7 @@
         
         this.title = 'Image Saving Preferences';
         
-        this.preferencesWin = null;
-        this.progressWin = null;
+        this.preferencesWin = null;        
     }
 
     CropSaverUi.prototype = {
@@ -943,55 +1032,21 @@
                 this.opts.outputResultsDestinationPath = folder.fsName;
             }
         },
-        
-        closeProgress: function() {
-            this.progressWin.close(0);
-        },
-        
+                
         escapePath: function(path) {
             return isWindows() ? path.replace(/\\/g, '\\\\') : path;
         },
-        
-        prepareProgress: function() {
-            var resource =
-            "palette { orientation:'column', text: 'Please wait...', preferredSize: [450, 30], alignChildren: 'fill', \
-                barPanel: Panel { orientation: 'row', alignment: 'left', text: 'Progress', \
-                    bar: Progressbar { preferredSize: [378, 16], alignment: ['left', 'center'] \
-                    }, \
-                    stPercent: StaticText { alignment: ['right', 'center'], text: '  0% ', characters: 4, justify: 'right' } \
-                }, \
-                infoGroup: Group { orientation: 'column', alignment: 'fill', \
-                                   alignChildren: 'fill', maximumSize: [1000, 40], \
-                    stDoc: StaticText { text: ' ', properties: {multiline: true} }, \
-                    stWarn: StaticText { text: 'Please do not make changes to current document !' } \
-                }, \
-                btnGrp: Group { orientation:'row', alignment: 'right', \
-                    cancelBtn: Button { text:'Cancel', properties:{name:'cancel'} } \
-                } \
-            }";
-            
-            this.progressWin = new Window(resource);
-            
-            var that = this;
-            this.progressWin.btnGrp.cancelBtn.onClick = function() {
-                that.opts.isCancelledByClient = true;
-                that.progressWin.close(-1);
-            };
-            
-            this.progressWin.center();
-            
-            return this.progressWin;
-        },
-        
+                
         prepareWindow: function() {
             var that = this;
             // Define the resource specification string,
             // which specifies all of the components for the 
             // Image Saving Preferences dialog.
-            var resource =
+            var maxNotePanelHeight = (isMac()) ? 100 : 90,
+                resource =
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
-                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, 90], margins: [15, 0, 10, 15], \
+                notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, "+maxNotePanelHeight+"], margins: [15, 0, 10, 15], \
                     text: 'Note', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
@@ -1009,7 +1064,7 @@
                         rbTiff: RadioButton { text: 'TIFF' } \
                     }, \
                     smallSizeGroup: Group{orientation: 'column', alignment: 'left',\
-                        chb: Checkbox { text: ' Create small size images, too.', alignment: ['left', 'center'] } \
+                        chb: Checkbox { text: ' Create small size JPEG images, too.', alignment: ['left', 'center'] } \
                         selectSmallerSizeGroup: Group{orientation: 'row', alignment: 'left', margins: [20, 0, 10, 0] \
                             st: StaticText { alignment: ['left', 'center'], text: 'Set long side to:' }, \
                             sizeEt: EditText { characters: 5, text: '"+this.defaultSmallSizeOutputImageLongerSide+"' }, \
@@ -1034,28 +1089,8 @@
                 that.browseForOutputFolder.call(that);
             };
             
-            var typeGroup = settings.outputTypeGroup;
-            typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
-                var selected = 'JPEG';
-                if (typeGroup.rbTiff.value) {
-                    selected = 'TIFF';
-                }
-                that.opts.outputImageType = selected;
-            };
-            
-            var smallSizeGroup = settings.smallSizeGroup;
-            smallSizeGroup.chb.onClick = function() {
-                if (smallSizeGroup.chb.value) {
-                    that.opts.wantSmallSize = true;
-                    smallSizeGroup.selectSmallerSizeGroup.enabled = true;
-                }
-                else {
-                    that.opts.wantSmallSize = false;
-                    smallSizeGroup.selectSmallerSizeGroup.enabled = false;
-                }
-            };
-            
-            var selectSmallerSizeGroup = smallSizeGroup.selectSmallerSizeGroup,
+            var smallSizeGroup = settings.smallSizeGroup,
+                selectSmallerSizeGroup = smallSizeGroup.selectSmallerSizeGroup,
                 sizeEditText = selectSmallerSizeGroup.sizeEt;                
                 
             selectSmallerSizeGroup.enabled = false;
@@ -1069,6 +1104,27 @@
                 }
                 that.opts.smallSizeOutputImageLongerSide = size;
             };
+                        
+            smallSizeGroup.chb.onClick = function() {
+                if (smallSizeGroup.chb.value) {
+                    that.opts.wantSmallSize = true;
+                    selectSmallerSizeGroup.enabled = true;
+                }
+                else {
+                    that.opts.wantSmallSize = false;
+                    selectSmallerSizeGroup.enabled = false;
+                }
+            };
+            
+            var typeGroup = settings.outputTypeGroup;
+            typeGroup.rbJpeg.onClick = typeGroup.rbTiff.onClick = function() {
+                var selected = 'JPEG';
+                if (typeGroup.rbTiff.value) {
+                    selected = 'TIFF';
+                }
+                
+                that.opts.outputImageType = selected;
+            };
             
             var buttonGroup = this.preferencesWin.btnGrp;
             buttonGroup.processBtn.onClick = function() {
@@ -1081,32 +1137,6 @@
             this.preferencesWin.center();
             
             return this.preferencesWin;
-        },
-        
-        /**
-         * The idea for updating the progress is from https://github.com/jwa107/Photoshop-Export-Layers-to-Files-Fast
-         */
-        updateProgress: function(percent, currentDoc, force) {
-            var barPanel = this.progressWin.barPanel,
-                infoGroup = this.progressWin.infoGroup,
-                percent = parseInt(percent, 10),
-                maxInfoLength = 62,
-                processingInfo = '';
-            
-            barPanel.bar.value = percent;
-            barPanel.stPercent.text = percent + '% ';
-            
-            if (currentDoc) {
-                processingInfo = currentDoc;
-                if (maxInfoLength < currentDoc.length) {
-                    processingInfo = currentDoc.substring(0, maxInfoLength - 3) + '...';
-                }
-                infoGroup.stDoc.text = processingInfo;
-            }
-            
-            var d = new ActionDescriptor();
-            d.putEnumerated(sTID('state'), sTID('state'), sTID('redrawComplete'));
-            app.executeAction(sTID('wait'), d, DialogModes.NO);
         }
     };
 
@@ -1120,7 +1150,6 @@
         this.cropLayerName = 'CROP';
         
         this.opts = {
-            isCancelledByClient: false,
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
@@ -1130,18 +1159,29 @@
         this.okTextlineFeed = "\n";
         
         this.outputFileExtension = '';
+        
+        this.progressUi = null;
+        
         this.saveOptions = null;
         
         this.ui = null;
     }
     
     CropSaver.prototype = {
-        addWarningToAlertText: function(docName, msg) {
+        addWarningToAlertText: function(docName, msg, isUserCancelled) {
             if (-1 !== this.alertText.indexOf(docName)) {
                 docName = '         ';
             }
-            this.alertText = ''.concat(this.alertText, docName, ' - Warning: ', msg, this.okTextlineFeed);
-            this.alertTextHasWarnings = true;
+            
+            var warningPrefix = ' - Waring: ';
+            if (isUserCancelled) {
+                // no need to log error and direct user to error log file
+                var warningPrefix = ' - ';
+            }
+            else {
+                this.alertTextHasWarnings = true;
+            }
+            this.alertText = ''.concat(this.alertText, docName, warningPrefix, msg, this.okTextlineFeed);            
         },
         
         /**
@@ -1154,7 +1194,7 @@
         checkCancelledByClient: function(returnBoolean) {
             var result = false;
             
-            if (this.opts.isCancelledByClient) {
+            if ( this.progressUi.wasCancelledByClient() ) {
                 if (! returnBoolean) {
                     throw new Error(this.cancelledByClientMessage);
                 }
@@ -1223,8 +1263,7 @@
                 doc, start, snapshotName, progressWin;
             
             try {
-                progressWin = this.ui.prepareProgress();
-                progressWin.show();
+                this.progressUi = new CropSaverProgressIndicationUi();
                 
                 for (var i = 0; i < docsCount; i++)
                 {
@@ -1234,30 +1273,36 @@
                     
                     Stdlib.takeSnapshot(doc, snapshotName);
                     
-                    this.ui.updateProgress( percentComplete, 'Processing: ' + doc.name );
+                    this.progressUi.updateProgress( percentComplete, doc.name );
                     
                     this.processDocument(doc);
+                    
                     Stdlib.revertToSnapshot(doc, snapshotName);
                     
                     percentComplete = parseInt((i + 1) * 100 / docsCount, 10);
-                    this.ui.updateProgress( percentComplete );
+                    this.progressUi.updateProgress( percentComplete );
                                                             
                     this.checkCancelledByClient();
                 }
             } catch (e) {
+                app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
+                Stdlib.revertToSnapshot(doc, snapshotName);
+                
                 var msgToLog = '',
                     msgForUser = 'A problem occurred.';
                 if (this.cancelledByClientMessage === e.message) {
-                    msgToLog = 'Script execution was cancelled by User.';
+                    // no need to log error and direct user to error log file
                     msgForUser = 'You cancelled Crop Saver execution.';
+                    var isUserCancelled = true;
+                    this.addWarningToAlertText(doc.name, msgForUser, isUserCancelled);
                 }
-                this.addWarningToAlertText(doc.name, msgForUser);
-                app.activeDocument = doc; // must be the correct active document before attempting revert on Mac
-                Stdlib.revertToSnapshot(doc, snapshotName);
-                Stdlib.logException(e, msgToLog, false);
+                else {
+                    this.addWarningToAlertText(doc.name, msgForUser);
+                    Stdlib.logException(e, msgToLog, false);
+                }
             }
             
-            this.ui.closeProgress();
+            this.progressUi.closeProgress();
             
             app.activeDocument = currentActive;
             
@@ -1385,6 +1430,8 @@
         
         /**
          * Resize so that longer side is this.opts.smallSizeOutputImageLongerSide px
+         * Always output JPEG smaller size images
+         * 
          * The idea for resizing is from xbytor's xtools ResizeImage.resize
          * Check http://ps-scripts.sourceforge.net/xtools.html
          * License: http://www.opensource.org/licenses/bsd-license.php
@@ -1398,15 +1445,19 @@
                 maxSize = this.opts.smallSizeOutputImageLongerSide,
                 width = parseInt(doc.width),
                 height = parseInt(doc.height),
+                saveOptions = new JPEGSaveOptions(),
+                outputFileExtension = '.jpg',
                 outputName, file, method, resolution;
                 
+            saveOptions.quality = 10;
+                
             if (width > height) {
-                outputName = ''.concat(saveName, '_width_', maxSize, 'px', this.outputFileExtension);
+                outputName = ''.concat(saveName, '_width_', maxSize, 'px', outputFileExtension);
                 method = (maxSize > width) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(maxSize, null, resolution, method);
             }
             else {
-                outputName = ''.concat(saveName, '_height_', maxSize, 'px', this.outputFileExtension);
+                outputName = ''.concat(saveName, '_height_', maxSize, 'px', outputFileExtension);
                 method = (maxSize > height) ? ResampleMethod.BICUBICSMOOTHER : ResampleMethod.BICUBICSHARPER;
                 doc.resizeImage(null, maxSize, resolution, method);
             }
@@ -1414,7 +1465,7 @@
             file = new File(this.opts.outputResultsDestinationPath + '/' + outputName);
             
             try {
-                doc.saveAs(file, this.saveOptions, true, Extension.LOWERCASE);
+                doc.saveAs(file, saveOptions, true, Extension.LOWERCASE);
             } catch (e) {
                 var warnText = 'Failed to save small output image',
                     msg = ''.concat('File save error: ', e.message, "\n", warnText, ': ', file.toUIString(), "\n");
