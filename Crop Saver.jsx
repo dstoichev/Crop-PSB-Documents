@@ -1384,8 +1384,10 @@
          * @returns {boolean}
          */
         saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
-            var result = true,
-                saveName = doc.name.split('.')[0],
+            var docNameArray = doc.name.split('.');
+            docNameArray.pop();
+            var saveName = docNameArray.join('.'),
+                result = true,
                 now = new Date(),
                 tempDocumentName = ''.concat('Temp-', saveName, '-', now.valueOf()),
                 file = new File(this.opts.outputResultsDestinationPath + '/' + saveName + this.outputFileExtension),
