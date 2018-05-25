@@ -1394,7 +1394,7 @@
                 currentActive;
                 
             // Add temporary document
-            app.documents.add(tempDocWidthAsNumber, tempDocHeightAsNumber, 72, tempDocumentName, NewDocumentMode.RGB);
+            app.documents.add(tempDocWidthAsNumber, tempDocHeightAsNumber, 300, tempDocumentName, NewDocumentMode.RGB);
             currentActive = app.documents.getByName(tempDocumentName); // TODO: do we need this
             currentActive.paste();    
             currentActive.flatten();
