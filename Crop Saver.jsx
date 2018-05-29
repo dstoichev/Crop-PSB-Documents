@@ -1047,7 +1047,7 @@
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
                 notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, "+maxNotePanelHeight+"], margins: [15, 0, 10, 15], \
-                    text: 'Note', \
+                    text: 'Crop Saver version "+ this.opts.version +"', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
@@ -1153,7 +1153,8 @@
             outputResultsDestinationPath: Folder.myDocuments.fsName,
             outputImageType: 'JPEG',
             wantSmallSize: false,
-            smallSizeOutputImageLongerSide: 1000
+            smallSizeOutputImageLongerSide: 1000,
+            version: '1.11'
         };
         
         this.okTextlineFeed = "\n";
