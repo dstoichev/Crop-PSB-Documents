@@ -1015,6 +1015,8 @@
         
         this.opts = opts;
         
+        this.defaultNumCropLayers = opts.numCropLayers;
+        
         this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
         
         this.title = 'Image Saving Preferences';
@@ -1047,12 +1049,16 @@
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
                 notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, "+maxNotePanelHeight+"], margins: [15, 0, 10, 15], \
-                    text: 'Crop Saver version "+ this.opts.version +"', \
+                    text: 'Crop Saver version "+this.opts.version+"', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
                 }, \
                 settingsPnl: Panel { orientation: 'column',\
+                    numCropLayersGroup: Group{orientation: 'row', alignment: 'left', \
+                        st: StaticText { alignment: ['left', 'center'], text: 'CROP layers count:' }, \
+                        countEt: EditText { characters: 2, text: '"+this.defaultNumCropLayers+"' } \
+                    }, \
                     outputFolderGroup: Group{orientation: 'row', alignment: 'left', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
                         outputFolder: EditText {characters: 41, text: '"+this.escapePath( this.opts.outputResultsDestinationPath )+"'}, \
@@ -1083,6 +1089,19 @@
             this.preferencesWin.notePnl.st.text = this.docNote;            
             
             var settings = this.preferencesWin.settingsPnl;
+            
+            var cropLayersGroup = settings.numCropLayersGroup,
+                countEditText = cropLayersGroup.countEt;
+            
+            countEditText.onChange = function() {
+                var count = parseInt(countEditText.text);
+                if (isNaN(count) || 0 >= count) {                    
+                    count = that.defaultNumCropLayers;
+                    countEditText.text = count;
+                    alert('CROP layers count must be a positive integer.');
+                }
+                that.opts.numCropLayersGroup = count;
+            };
             
             // Register event listeners that define the button behavior
             settings.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
@@ -1154,7 +1173,8 @@
             outputImageType: 'JPEG',
             wantSmallSize: false,
             smallSizeOutputImageLongerSide: 1000,
-            version: '1.11'
+            version: '1.11',
+            numCropLayers: 1
         };
         
         this.okTextlineFeed = "\n";
