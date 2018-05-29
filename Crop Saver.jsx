@@ -1019,6 +1019,8 @@
         
         this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
         
+        this.maxCropLayersCount = opts.maxNumCropLayers;
+        
         this.title = 'Image Saving Preferences';
         
         this.preferencesWin = null;        
@@ -1100,6 +1102,13 @@
                     countEditText.text = count;
                     alert('CROP layers count must be a positive integer.');
                 }
+                
+                if (that.maxCropLayersCount < count) {
+                    count = that.defaultNumCropLayers;
+                    countEditText.text = count;
+                    alert('Maximum number of CROP layers is ' + that.maxCropLayersCount + '.');
+                }
+                
                 that.opts.numCropLayersGroup = count;
             };
             
@@ -1174,7 +1183,8 @@
             wantSmallSize: false,
             smallSizeOutputImageLongerSide: 1000,
             version: '1.11',
-            numCropLayers: 1
+            numCropLayers: 1,
+            maxNumCropLayers: 5
         };
         
         this.okTextlineFeed = "\n";
