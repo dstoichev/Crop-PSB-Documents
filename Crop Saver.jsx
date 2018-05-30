@@ -1502,6 +1502,7 @@
                 doc.selection.deselect();
             } catch (e) {}
             
+            var hasLayerMask = true;
             if (null !== cropLayerRef) {
                 if (Stdlib.hasLayerMask(doc, cropLayerRef)) {
                     if (false == cropLayerRef.visible) {
@@ -1518,6 +1519,7 @@
                     cropLayerRef.visible = false;
                 }
                 else {
+                    hasLayerMask = false;
                     // select all
                     this.selectAll(doc);
                 }
@@ -1546,7 +1548,11 @@
             
             this.checkCancelledByClient();
             
-            var clarification = ('' != cropLayerNamePostfix) ? ' CROP ' + cropLayerNamePostfix : '';
+            var clarification = '';
+            if (null !== cropLayerRef && hasLayerMask) {
+                clarification = ('' != cropLayerNamePostfix) ? ' CROP ' + cropLayerNamePostfix : ' CROP';
+            }
+            
             if (this.saveResult(doc, clarification, selectionWidth, selectionHeight)) {
                 clarification = '' !== clarification ? ': ' + clarification : '';
                 this.alertText = ''.concat(this.alertText, doc.name, clarification, ' - OK.', this.okTextlineFeed);
