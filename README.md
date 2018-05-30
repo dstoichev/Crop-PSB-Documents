@@ -1,6 +1,6 @@
 # Crop-PSB-Documents
 A series of files is OPEN in Photoshop.
-All the files are (often) 16 bit, they are huge layered files with a layer in the file called CROP.
+All the files are (often) 16 bit, they are huge layered files having layers called CROP 01, CROP 02, up to CROP 05.
 We need the images saved cropped via the CROP 01, CROP 02, etc. , layer when this layer exists and the image AS IS when no such layers.
 We need the result file to take the file name of the document.
 
