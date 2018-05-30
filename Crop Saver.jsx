@@ -912,8 +912,107 @@
     };
 
     
+    //
+    // Traverse the all layers, including nested layers, executing
+    // the specified function. Traversal can happen in both directions.
+    //
+    Stdlib.traverseLayers = function(doc, ftn, reverse, layerSets) {
+    
+      function _traverse(doc, layers, ftn, reverse, layerSets) {
+        var ok = true;
+        var len = layers.length;
+        for (var i = 1; i <= len && ok != false; i++) {
+          var index = (reverse == true) ? len-i : i - 1;
+          var layer = layers[index];
+    
+          if (layer.typename == "LayerSet") {
+            if (layerSets) {
+              ok = ftn(doc, layer);
+            }
+            if (ok) {
+              ok = _traverse(doc, layer.layers, ftn, reverse, layerSets);
+            }
+          } else {
+            ok = ftn(doc, layer);
+            try {
+              if (app.activeDocument != doc) {
+                app.activeDocument = doc;
+              }
+            } catch (e) {
+            }
+          }
+        }
+        return ok;
+      };
+    
+      return _traverse(doc, doc.layers, ftn, reverse, layerSets);
+    };
+    
+    Stdlib.getLayersList = function(doc, reverse, layerSets) {
+      function _ftn(doc, layer) {
+        _ftn.list.push(layer);
+        return true;
+      };
+    
+      _ftn.list = [];
+      Stdlib.traverseLayers(doc, _ftn, reverse, layerSets);
+    
+      var lst = _ftn.list;
+      _ftn.list = undefined;
+      return lst;
+    };
+
+    
     // EOF EXTRACT from stdlib.js
     
+    
+    // Polyfill
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function indexOf(member, startFrom) {
+          /*
+          In non-strict mode, if the `this` variable is null or undefined, then it is
+          set to the window object. Otherwise, `this` is automatically converted to an
+          object. In strict mode, if the `this` variable is null or undefined, a
+          `TypeError` is thrown.
+          */
+          if (this == null) {
+            throw new TypeError("Array.prototype.indexOf() - can't convert `" + this + "` to object");
+          }
+      
+          var
+            index = isFinite(startFrom) ? Math.floor(startFrom) : 0,
+            that = this instanceof Object ? this : new Object(this),
+            length = isFinite(that.length) ? Math.floor(that.length) : 0;
+      
+          if (index >= length) {
+            return -1;
+          }
+      
+          if (index < 0) {
+            index = Math.max(length + index, 0);
+          }
+      
+          if (member === undefined) {
+            /*
+              Since `member` is undefined, keys that don't exist will have the same
+              value as `member`, and thus do need to be checked.
+            */
+            do {
+              if (index in that && that[index] === undefined) {
+                return index;
+              }
+            } while (++index < length);
+          } else {
+            do {
+              if (that[index] === member) {
+                return index;
+              }
+            } while (++index < length);
+          }
+      
+          return -1;
+        };
+      }
     
     
     CropSaverProgressIndicationUi = function CropSaverProgressIndicationUi() {
@@ -1010,12 +1109,16 @@
         this.bounds = "x: 200, y: 200, width: 650, height: 420";
         
         this.docNote = ''.concat("\n", 'Processes all documents currently OPEN in Photoshop.', "\n\n",
-                                 'Saves an image cropped via the CROP layer ',
-                                  'when this layer exists and an image AS IS when the layer is absent.');
+                                 'Saves an image cropped via the CROP 01, CROP 02, etc. , layer ',
+                                  'when this layer exists and an image AS IS when no such layers.');
         
         this.opts = opts;
         
+        this.defaultNumCropLayers = opts.numCropLayers;
+        
         this.defaultSmallSizeOutputImageLongerSide = opts.smallSizeOutputImageLongerSide;
+        
+        this.maxCropLayersCount = opts.maxNumCropLayers;
         
         this.title = 'Image Saving Preferences';
         
@@ -1047,12 +1150,16 @@
             "dialog { orientation:'column', \
                 text: '"+this.title+"', frameLocation:[100, 100],  \
                 notePnl: Panel { orientation:'column', alignment: 'fill', maximumSize: [700, "+maxNotePanelHeight+"], margins: [15, 0, 10, 15], \
-                    text: 'Crop Saver version "+ this.opts.version +"', \
+                    text: 'Crop Saver version "+this.opts.version+"', \
                     st: StaticText { text: '', alignment: 'fill', \
                                      properties: {multiline: true} \
                     }, \
                 }, \
                 settingsPnl: Panel { orientation: 'column',\
+                    numCropLayersGroup: Group{orientation: 'row', alignment: 'left', \
+                        st: StaticText { alignment: ['left', 'center'], text: '\\'CROP 0X\\' layers count:' }, \
+                        countEt: EditText { characters: 2, text: '"+this.defaultNumCropLayers+"' } \
+                    }, \
                     outputFolderGroup: Group{orientation: 'row', alignment: 'left', \
                         st: StaticText { alignment: ['left', 'center'], text: 'Output folder:' }, \
                         outputFolder: EditText {characters: 41, text: '"+this.escapePath( this.opts.outputResultsDestinationPath )+"'}, \
@@ -1083,6 +1190,26 @@
             this.preferencesWin.notePnl.st.text = this.docNote;            
             
             var settings = this.preferencesWin.settingsPnl;
+            
+            var cropLayersGroup = settings.numCropLayersGroup,
+                countEditText = cropLayersGroup.countEt;
+            
+            countEditText.onChange = function() {
+                var count = parseInt(countEditText.text);
+                if (isNaN(count) || 0 >= count) {                    
+                    count = that.defaultNumCropLayers;
+                    countEditText.text = count;
+                    alert('CROP layers count must be a positive integer.');
+                }
+                
+                if (that.maxCropLayersCount < count) {
+                    count = that.defaultNumCropLayers;
+                    countEditText.text = count;
+                    alert('Maximum number of CROP layers is ' + that.maxCropLayersCount + '.');
+                }
+                
+                that.opts.numCropLayers = count;
+            };
             
             // Register event listeners that define the button behavior
             settings.outputFolderGroup.outputFolderBrowseBtn.onClick = function() {
@@ -1154,7 +1281,9 @@
             outputImageType: 'JPEG',
             wantSmallSize: false,
             smallSizeOutputImageLongerSide: 1000,
-            version: '1.11'
+            version: '1.11',
+            numCropLayers: 1,
+            maxNumCropLayers: 5
         };
         
         this.okTextlineFeed = "\n";
@@ -1315,43 +1444,91 @@
         },
         
         processDocument: function(doc) {
-            var cropLayerRef;
-                
             app.activeDocument = doc;
+            
+            var cropLayerNames = new Array(),
+                cropLayerNamePostfixes = new Array(),
+                cropLayers = new Array();
                 
+            for (var i = 1; i <= this.opts.numCropLayers; i++)
+            {
+                cropLayerNamePostfixes[i - 1] = '0' + i;
+                cropLayerNames[i -1] = ''.concat(this.cropLayerName, ' ', cropLayerNamePostfixes[i - 1]);
+                cropLayers[i - 1] = null;
+            }
+            
+            // The old way, just CROP
+            cropLayerNamePostfixes[this.opts.numCropLayers] = '';
+            cropLayerNames[this.opts.numCropLayers] = this.cropLayerName;
+            cropLayers[this.opts.numCropLayers] = null;
+            
+            var layersList = Stdlib.getLayersList(doc, false, doc.layerSets),
+                idx;
+            
+            for (var k = 0; k < layersList.length; k++)
+            {
+                idx = cropLayerNames.indexOf(layersList[k].name);                
+                if (-1 !== idx && 'ArtLayer' == layersList[k].typename) {                    
+                    if (layersList[k].visible) {
+                        layersList[k].visible = false;
+                    }
+                    cropLayers[idx] = layersList[k];
+                }
+            }
+                        
+            var nothingFound = true;
+            for (var j = 0; j < this.opts.numCropLayers; j++)
+            {
+                if (null !== cropLayers[j]) {
+                    nothingFound = false;
+                    this.processLayer(doc, cropLayers[j], cropLayerNamePostfixes[j]);
+                }
+            }
+            
+            if (nothingFound) {
+                if (null !== cropLayers[this.opts.numCropLayers]) {
+                    // The old way, just CROP
+                    this.processLayer(doc, cropLayers[this.opts.numCropLayers], cropLayerNamePostfixes[this.opts.numCropLayers]);
+                }
+                else {
+                    this.processLayer(doc, null, '');
+                }                
+            }
+        },
+        
+        processLayer: function(doc, cropLayerRef, cropLayerNamePostfix) {
             try {
                 // Clean up selection, if any
                 doc.selection.deselect();
             } catch (e) {}
             
-            try {
-                cropLayerRef = doc.artLayers.getByName(this.cropLayerName);
-                
-                if (false == cropLayerRef.visible) {
-                    cropLayerRef.visible = true;
-                }
-                
+            var hasLayerMask = true;
+            if (null !== cropLayerRef) {
                 if (Stdlib.hasLayerMask(doc, cropLayerRef)) {
+                    if (false == cropLayerRef.visible) {
+                        cropLayerRef.visible = true;
+                    }
+                    
                     if (!Stdlib.isLayerMaskEnabled(doc, cropLayerRef)) {                    
                         Stdlib.enableLayerMask(doc, cropLayerRef);
                     }
                     
-                    this.selectJustTheCrop();                    
+                    var pf = '' !== cropLayerNamePostfix ? ' ' + cropLayerNamePostfix : '';
+                    this.selectJustTheCrop(pf);
+                    
+                    cropLayerRef.visible = false;
                 }
                 else {
+                    hasLayerMask = false;
                     // select all
                     this.selectAll(doc);
                 }
                 
                 this.checkCancelledByClient();
-            } catch(e) {                    
-                if ('No such element' == e.message || '- The object "layer "CROP"" is not currently available.' == e.message) {
-                    // select all
-                    this.selectAll(doc);
-                }
-                else {
-                    throw (e);
-                }
+            }
+            else {                    
+                // select all
+                this.selectAll(doc);
             }
             
             var bounds = Stdlib.getSelectionBounds(doc),
@@ -1371,8 +1548,14 @@
             
             this.checkCancelledByClient();
             
-            if (this.saveResult(doc, selectionWidth, selectionHeight)) {
-                this.alertText = ''.concat(this.alertText, doc.name, ' - OK.', this.okTextlineFeed);
+            var clarification = '';
+            if (null !== cropLayerRef && hasLayerMask) {
+                clarification = ('' != cropLayerNamePostfix) ? ' CROP ' + cropLayerNamePostfix : ' CROP';
+            }
+            
+            if (this.saveResult(doc, clarification, selectionWidth, selectionHeight)) {
+                clarification = '' !== clarification ? ': ' + clarification : '';
+                this.alertText = ''.concat(this.alertText, doc.name, clarification, ' - OK.', this.okTextlineFeed);
             }
         },
         
@@ -1380,14 +1563,15 @@
          * Save the contents of the clipboard to an image file
          *
          * @param {Document} doc
+         * @param {String} saveNamePostfix
          * @param {Number} tempDocWidthAsNumber
          * @param {Number} tempDocHeightAsNumber
          * @returns {boolean}
          */
-        saveResult: function(doc, tempDocWidthAsNumber, tempDocHeightAsNumber) {
+        saveResult: function(doc, saveNamePostfix, tempDocWidthAsNumber, tempDocHeightAsNumber) {
             var docNameArray = doc.name.split('.');
             docNameArray.pop();
-            var saveName = docNameArray.join('.'),
+            var saveName = docNameArray.join('.') + saveNamePostfix,
                 result = true,
                 now = new Date(),
                 tempDocumentName = ''.concat('Temp-', saveName, '-', now.valueOf()),
@@ -1489,7 +1673,7 @@
          * Via ActionManager code
          * Select the entire layer then subtract the mask from the selection
          */
-        selectJustTheCrop: function() {
+        selectJustTheCrop: function(cropLayerNamePostfixWithLeadingSpace) {
             var idnull = charIDToTypeID( "null" ),
                 idOrdn = charIDToTypeID( "Ordn" ),
                 idChnl = charIDToTypeID( "Chnl" ),
@@ -1503,7 +1687,7 @@
                 idLyr = charIDToTypeID( "Lyr " );
                 
                 
-            ref1.putName( idLyr, this.cropLayerName );
+            ref1.putName( idLyr, this.cropLayerName + cropLayerNamePostfixWithLeadingSpace );
             desc1.putReference( idnull, ref1 );
             desc1.putBoolean( idMkVs, false );
             executeAction( idslct, desc1, DialogModes.NO );
