@@ -1292,6 +1292,8 @@
         
         this.progressUi = null;
         
+        this.saveNames = new Array();
+        
         this.saveOptions = null;
         
         this.ui = null;
@@ -1342,6 +1344,20 @@
         copyMerged: function() {    
             var idCpyM = charIDToTypeID( "CpyM" );
             executeAction( idCpyM, undefined, DialogModes.NO );
+        },
+        
+        getSaveName: function(base) {
+            var current = base,
+                counter = 1;
+            while (-1 !== this.saveNames.indexOf(current))
+            {
+                current = ''.concat(base, ' (', counter, ')');
+                counter++;
+            }
+            
+            // Remember
+            this.saveNames.push(current);
+            return current;
         },
         
         init: function() {
@@ -1571,7 +1587,7 @@
         saveResult: function(doc, saveNamePostfix, tempDocWidthAsNumber, tempDocHeightAsNumber) {
             var docNameArray = doc.name.split('.');
             docNameArray.pop();
-            var saveName = docNameArray.join('.') + saveNamePostfix,
+            var saveName = this.getSaveName(docNameArray.join('.') + saveNamePostfix),
                 result = true,
                 now = new Date(),
                 tempDocumentName = ''.concat('Temp-', saveName, '-', now.valueOf()),
